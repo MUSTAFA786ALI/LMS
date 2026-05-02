@@ -3,7 +3,7 @@
  * User profile and preferences
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/hooks/useAuth';
 import { usePreferencesStore } from '@/src/store/prefsStore';
+import { useNotifications } from '@/src/hooks/useNotifications';
 import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { Button } from '@/src/components/ui/Button';
 import { Colors, Spacing, FontSizes } from '@/src/constants/theme';
@@ -23,10 +24,24 @@ import { MaterialIcons } from '@expo/vector-icons';
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { theme, setTheme } = usePreferencesStore((state) => ({
+  const {
+    theme,
+    setTheme,
+    notificationsEnabled,
+    setNotificationsEnabled,
+    inactivityReminderEnabled,
+    setInactivityReminderEnabled,
+  } = usePreferencesStore((state) => ({
     theme: state.theme,
     setTheme: state.setTheme,
+    notificationsEnabled: state.notificationsEnabled,
+    setNotificationsEnabled: state.setNotificationsEnabled,
+    inactivityReminderEnabled: state.inactivityReminderEnabled,
+    setInactivityReminderEnabled: state.setInactivityReminderEnabled,
   }));
+
+  const { sendNotification } = useNotifications();
+  const [testNotificationLoading, setTestNotificationLoading] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -36,6 +51,32 @@ export default function ProfileScreen() {
   const handleThemeToggle = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
+  };
+
+  const handleNotificationsToggle = async () => {
+    await setNotificationsEnabled(!notificationsEnabled);
+  };
+
+  const handleInactivityReminderToggle = async () => {
+    await setInactivityReminderEnabled(!inactivityReminderEnabled);
+  };
+
+  const handleTestNotification = async () => {
+    setTestNotificationLoading(true);
+    try {
+      const success = await sendNotification({
+        title: 'Course Reminder',
+        body: 'You have a course waiting! Check out your learning progress.',
+        delayMs: 2000,
+      });
+      if (!success) {
+        alert('Notifications disabled. Please enable notifications in settings.');
+      }
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+    } finally {
+      setTestNotificationLoading(false);
+    }
   };
 
   return (
@@ -86,13 +127,64 @@ export default function ProfileScreen() {
           </Pressable>
 
           {/* Notifications Setting */}
-          <Pressable style={styles.settingItem}>
+          <Pressable
+            style={styles.settingItem}
+            onPress={handleNotificationsToggle}
+          >
             <View style={styles.settingLeft}>
               <MaterialIcons name="notifications" size={24} color={Colors.light.primary} />
               <Text style={styles.settingLabel}>Notifications</Text>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
+            <View style={[
+              styles.toggle,
+              notificationsEnabled && styles.toggleActive,
+            ]}>
+              <View style={[
+                styles.toggleDot,
+                notificationsEnabled && styles.toggleDotActive,
+              ]} />
+            </View>
           </Pressable>
+
+          {/* Inactivity Reminder */}
+          {notificationsEnabled && (
+            <Pressable
+              style={styles.settingItem}
+              onPress={handleInactivityReminderToggle}
+            >
+              <View style={styles.settingLeft}>
+                <MaterialIcons name="schedule" size={24} color={Colors.light.primary} />
+                <Text style={styles.settingLabel}>Remind me to learn</Text>
+              </View>
+              <View style={[
+                styles.toggle,
+                inactivityReminderEnabled && styles.toggleActive,
+              ]}>
+                <View style={[
+                  styles.toggleDot,
+                  inactivityReminderEnabled && styles.toggleDotActive,
+                ]} />
+              </View>
+            </Pressable>
+          )}
+
+          {/* Test Notification Button */}
+          {notificationsEnabled && (
+            <Pressable
+              style={styles.settingItem}
+              onPress={handleTestNotification}
+            >
+              <View style={styles.settingLeft}>
+                <MaterialIcons name="mail" size={24} color={Colors.light.primary} />
+                <Text style={styles.settingLabel}>Test Notification</Text>
+              </View>
+              {testNotificationLoading ? (
+                <LoadingSpinner size="small" color={Colors.light.primary} />
+              ) : (
+                <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
+              )}
+            </Pressable>
+          )}
         </View>
 
         {/* About Section */}

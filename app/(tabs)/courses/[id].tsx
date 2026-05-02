@@ -16,6 +16,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useCourses } from '@/src/hooks/useCourses';
+import { useNotifications } from '@/src/hooks/useNotifications';
+import { usePreferencesStore } from '@/src/store/prefsStore';
 import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { Button } from '@/src/components/ui/Button';
 import { ErrorMessage } from '@/src/components/ui/ErrorMessage';
@@ -185,6 +187,18 @@ export default function CourseDetailScreen() {
 
   const handleEnroll = async () => {
     addEnrollment(course.id);
+    
+    // Send enrollment notification if enabled
+    const { notificationsEnabled } = usePreferencesStore.getState();
+    if (notificationsEnabled) {
+      const { sendNotification } = useNotifications();
+      await sendNotification({
+        title: 'Course Enrolled',
+        body: `You've successfully enrolled in ${course.title}. Start learning!`,
+        data: { courseId: course.id },
+        delayMs: 500,
+      });
+    }
   };
 
   const handleWebViewMessage = (event: any) => {
