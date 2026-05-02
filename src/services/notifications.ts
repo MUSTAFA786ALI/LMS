@@ -61,7 +61,10 @@ export async function sendLocalNotification(data: {
         data: data.data || {},
         sound: 'default',
       },
-      trigger: data.delayMs ? { seconds: Math.ceil(data.delayMs / 1000) } : null,
+      trigger: data.delayMs ? {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.ceil(data.delayMs / 1000),
+      } : null,
     });
 
     return notificationId;
@@ -96,6 +99,7 @@ export async function scheduleNotificationAt(data: {
         sound: 'default',
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: data.fireDate,
       },
     });
@@ -132,6 +136,7 @@ export async function scheduleRecurringNotification(data: {
         sound: 'default',
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: data.seconds,
         repeats: true,
       },
@@ -180,6 +185,8 @@ export function setNotificationHandler(
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
       };
     },
   });
@@ -189,6 +196,9 @@ export function setNotificationHandler(
       onTapped(response);
     });
 
-    return () => subscription.remove();
+    if (typeof subscription !== 'undefined') {
+      // Return cleanup function through a separate mechanism
+      subscription.remove();
+    }
   }
 }

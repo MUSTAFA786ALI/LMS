@@ -9,6 +9,7 @@ export const Colors = {
   light: {
     background: '#FFFFFF',
     surface: '#F5F5F5',
+    cardBg: '#FAFAFA',
     text: '#000000',
     textSecondary: '#666666',
     textTertiary: '#999999',
@@ -23,6 +24,7 @@ export const Colors = {
   dark: {
     background: '#121212',
     surface: '#1E1E1E',
+    cardBg: '#272727',
     text: '#FFFFFF',
     textSecondary: '#B0B0B0',
     textTertiary: '#808080',

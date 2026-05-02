@@ -9,6 +9,7 @@ export interface Instructor {
   email: string;
   avatar?: string;
   university?: string;
+  fullName?: string;
 }
 
 export interface Course {
