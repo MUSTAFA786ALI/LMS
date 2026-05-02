@@ -20,7 +20,17 @@ jest.mock('@/src/hooks/useNetworkStatus', () => ({
 describe('useOfflineFirst', () => {
   beforeEach(() => {
     useCourseStore.setState({
-      courses: [{ id: '1', title: 'Test Course' }],
+      courses: [{
+        id: '1',
+        title: 'Test Course',
+        description: 'Test Description',
+        instructor: { id: '1', firstName: 'John', lastName: 'Doe', fullName: 'John Doe', email: 'john@example.com' },
+        rating: 4.5,
+        enrolledCount: 100,
+        duration: 10,
+        level: 'beginner' as const,
+        category: 'Programming',
+      }],
       lastSyncTime: Date.now(),
     });
   });

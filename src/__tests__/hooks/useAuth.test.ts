@@ -11,7 +11,6 @@ describe('useAuth', () => {
     // Clear store before each test
     useAuthStore.setState({
       user: null,
-      token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -50,7 +49,7 @@ describe('useAuth', () => {
   it('should handle logout', async () => {
     // Setup: login first
     useAuthStore.setState({
-      user: { id: '1', email: 'test@example.com', fullName: 'Test User' },
+      user: { id: '1', username: 'testuser', email: 'test@example.com', fullName: 'Test User' },
       isAuthenticated: true,
     });
 

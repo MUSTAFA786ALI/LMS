@@ -10,11 +10,11 @@ const mockCourse = {
   id: '1',
   title: 'Test Course',
   description: 'Test Description',
-  instructor: { firstName: 'John', lastName: 'Doe', fullName: 'John Doe' },
+  instructor: { id: '1', firstName: 'John', lastName: 'Doe', fullName: 'John Doe', email: 'john@example.com' },
   rating: 4.5,
   enrolledCount: 100,
   duration: 10,
-  level: 'Beginner',
+  level: 'beginner' as const,
   category: 'Programming',
 };
 
