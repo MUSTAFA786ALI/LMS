@@ -3,7 +3,7 @@
  * Main feed showing courses and recommendations
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -16,6 +16,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useCourses } from '@/src/hooks/useCourses';
 import { useAuth } from '@/src/hooks/useAuth';
+import { useOfflineFirst } from '@/src/hooks/useOfflineFirst';
 import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/src/components/ui/ErrorMessage';
 import { CourseCard } from '@/src/components/CourseCard';
@@ -37,6 +38,10 @@ export default function HomeScreen() {
     isBookmarked,
   } = useCourses();
 
+  const offlineFirst = useOfflineFirst();
+  const [refreshing, setRefreshing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
   useEffect(() => {
     fetchCourses();
   }, []);
@@ -47,6 +52,29 @@ export default function HomeScreen() {
 
   const handleLogout = () => {
     router.replace('/(auth)/login');
+  };
+
+  const handleRefresh = async () => {
+    if (!offlineFirst.isOnline) {
+      setSyncMessage('Cannot refresh while offline');
+      setTimeout(() => setSyncMessage(null), 3000);
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      const result = await offlineFirst.refresh();
+      if (result.success) {
+        setSyncMessage('Refreshed! Using latest data');
+      } else {
+        setSyncMessage(`Refresh failed: ${result.error}`);
+      }
+    } catch (error: any) {
+      setSyncMessage(error.message || 'Refresh failed');
+    } finally {
+      setRefreshing(false);
+      setTimeout(() => setSyncMessage(null), 3000);
+    }
   };
 
   // Featured courses (first 3)
@@ -70,6 +98,44 @@ export default function HomeScreen() {
             <MaterialIcons name="logout" size={24} color={Colors.light.primary} />
           </Pressable>
         </View>
+
+        {/* Cache Status Banner */}
+        {!offlineFirst.isOnline || !offlineFirst.isCacheValid ? (
+          <View style={styles.cacheBanner}>
+            <View style={styles.bannerContent}>
+              <View style={styles.bannerLeft}>
+                {offlineFirst.isOnline && !offlineFirst.isCacheValid ? (
+                  <>
+                    <MaterialIcons name="update" size={18} color={Colors.light.primary} />
+                    <Text style={styles.bannerText}>Data may be outdated (cached {offlineFirst.getCacheAge()})</Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="wifi-off" size={18} color={Colors.light.error} />
+                    <Text style={styles.bannerText}>Offline - showing cached data</Text>
+                  </>
+                )}
+              </View>
+              {offlineFirst.isOnline && (
+                <Pressable
+                  onPress={handleRefresh}
+                  disabled={refreshing}
+                  hitSlop={8}
+                  style={styles.refreshButton}
+                >
+                  {refreshing ? (
+                    <LoadingSpinner size="small" color={Colors.light.primary} />
+                  ) : (
+                    <MaterialIcons name="refresh" size={18} color={Colors.light.primary} />
+                  )}
+                </Pressable>
+              )}
+            </View>
+            {syncMessage && (
+              <Text style={styles.syncMessage}>{syncMessage}</Text>
+            )}
+          </View>
+        ) : null}
 
         {/* Error Message */}
         {error && (
@@ -248,5 +314,40 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.light.textSecondary,
     marginTop: Spacing.sm,
+  },
+  cacheBanner: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.light.primary,
+  },
+  bannerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bannerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  bannerText: {
+    fontSize: FontSizes.sm,
+    color: '#92400E',
+    fontWeight: '500',
+    flex: 1,
+  },
+  refreshButton: {
+    padding: Spacing.xs,
+    marginLeft: Spacing.sm,
+  },
+  syncMessage: {
+    fontSize: FontSizes.xs,
+    color: '#92400E',
+    marginTop: Spacing.xs,
+    fontStyle: 'italic',
   },
 });
