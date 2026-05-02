@@ -18,6 +18,7 @@ import { useCourses } from '@/src/hooks/useCourses';
 import { useAuth } from '@/src/hooks/useAuth';
 import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/src/components/ui/ErrorMessage';
+import { CourseCard } from '@/src/components/CourseCard';
 import { Colors, Spacing, FontSizes } from '@/src/constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -27,10 +28,13 @@ export default function HomeScreen() {
   const {
     courses,
     enrolledCourseIds,
+    bookmarkedCourseIds,
     isLoading,
     error,
     fetchCourses,
+    toggleBookmark,
     clearError,
+    isBookmarked,
   } = useCourses();
 
   useEffect(() => {
@@ -99,36 +103,15 @@ export default function HomeScreen() {
                   scrollEventThrottle={16}
                   contentContainerStyle={styles.courseList}
                   renderItem={({ item }) => (
-                    <Pressable
-                      style={styles.featuredCard}
-                      onPress={() => handleCoursePress(item.id)}
-                    >
-                      <View
-                        style={[
-                          styles.courseImage,
-                          { backgroundColor: Colors.light.primary },
-                        ]}
-                      >
-                        <MaterialIcons name="school" size={48} color="white" />
-                      </View>
-                      <Text style={styles.courseTitle} numberOfLines={2}>
-                        {item.title}
-                      </Text>
-                      <Text style={styles.courseInstructor} numberOfLines={1}>
-                        {item.instructor?.fullName || 'Unknown'}
-                      </Text>
-                      <View style={styles.courseFooter}>
-                        <View style={styles.rating}>
-                          <MaterialIcons name="star" size={14} color="#FBBF24" />
-                          <Text style={styles.ratingText}>
-                            {(item.rating || 4.5).toFixed(1)}
-                          </Text>
-                        </View>
-                        <Text style={styles.enrollCount}>
-                          {(item.enrolledCount || 0).toLocaleString()} enrolled
-                        </Text>
-                      </View>
-                    </Pressable>
+                    <View style={styles.featuredCardWrapper}>
+                      <CourseCard
+                        course={item}
+                        variant="grid"
+                        onPress={handleCoursePress}
+                        onBookmark={toggleBookmark}
+                        isBookmarked={isBookmarked(item.id)}
+                      />
+                    </View>
                   )}
                   keyExtractor={(item) => item.id}
                   scrollEnabled
@@ -155,33 +138,13 @@ export default function HomeScreen() {
                   scrollEnabled={false}
                   contentContainerStyle={styles.allCoursesList}
                   renderItem={({ item }) => (
-                    <Pressable
-                      style={styles.courseListItem}
-                      onPress={() => handleCoursePress(item.id)}
-                    >
-                      <View style={styles.courseListItemImage}>
-                        <MaterialIcons name="school" size={32} color={Colors.light.primary} />
-                      </View>
-                      <View style={styles.courseListItemContent}>
-                        <Text style={styles.courseListItemTitle} numberOfLines={1}>
-                          {item.title}
-                        </Text>
-                        <Text style={styles.courseListItemInstructor} numberOfLines={1}>
-                          {item.instructor?.fullName || 'Unknown'}
-                        </Text>
-                        <View style={styles.courseListItemFooter}>
-                          <MaterialIcons name="star" size={12} color="#FBBF24" />
-                          <Text style={styles.courseListItemRating}>
-                            {(item.rating || 4.5).toFixed(1)}
-                          </Text>
-                        </View>
-                      </View>
-                      <MaterialIcons
-                        name="chevron-right"
-                        size={24}
-                        color={Colors.light.textTertiary}
-                      />
-                    </Pressable>
+                    <CourseCard
+                      course={item}
+                      variant="list"
+                      onPress={handleCoursePress}
+                      onBookmark={toggleBookmark}
+                      isBookmarked={isBookmarked(item.id)}
+                    />
                   )}
                   keyExtractor={(item) => item.id}
                 />
@@ -258,101 +221,17 @@ const styles = StyleSheet.create({
   courseList: {
     paddingRight: Spacing.lg,
   },
-  featuredCard: {
+  featuredCardWrapper: {
     width: 160,
     marginRight: Spacing.md,
-    backgroundColor: Colors.light.cardBg,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  courseImage: {
-    width: '100%',
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  courseTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.light.text,
-    paddingHorizontal: Spacing.sm,
-    paddingTop: Spacing.sm,
-  },
-  courseInstructor: {
-    fontSize: FontSizes.xs,
-    color: Colors.light.textSecondary,
-    paddingHorizontal: Spacing.sm,
-  },
-  courseFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-    paddingBottom: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  rating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: FontSizes.xs,
-    color: Colors.light.text,
-    fontWeight: '600',
-  },
-  enrollCount: {
-    fontSize: FontSizes.xs,
-    color: Colors.light.textSecondary,
   },
   allCoursesList: {
     paddingBottom: Spacing.xl,
   },
-  courseListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    backgroundColor: Colors.light.cardBg,
-    borderRadius: 12,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  courseListItemImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: '#EFF6FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md,
-  },
-  courseListItemContent: {
-    flex: 1,
-  },
-  courseListItemTitle: {
+  enrollCount: {
     fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.light.text,
-    marginBottom: 2,
-  },
-  courseListItemInstructor: {
-    fontSize: FontSizes.xs,
     color: Colors.light.textSecondary,
-    marginBottom: 4,
-  },
-  courseListItemFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  courseListItemRating: {
-    fontSize: FontSizes.xs,
-    color: Colors.light.text,
-    fontWeight: '600',
+    marginTop: Spacing.xs,
   },
   emptyState: {
     height: 300,
