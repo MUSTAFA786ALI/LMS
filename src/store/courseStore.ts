@@ -33,7 +33,9 @@ interface CourseStore {
   toggleBookmark: (courseId: string) => Promise<void>;
   isBookmarked: (courseId: string) => boolean;
   addEnrollment: (courseId: string) => Promise<void>;
+  isEnrolled: (courseId: string) => boolean;
   getBookmarkedCourses: () => Course[];
+  getEnrolledCourses: () => Course[];
   setError: (error: string | null) => void;
   clearError: () => void;
 }
@@ -247,9 +249,18 @@ export const useCourseStore = create<CourseStore>()(
       }
     },
 
+    isEnrolled: (courseId: string) => {
+      return get().enrolledCourseIds.has(courseId);
+    },
+
     getBookmarkedCourses: () => {
       const { courses, bookmarkedCourseIds } = get();
       return courses.filter((course) => bookmarkedCourseIds.has(course.id));
+    },
+
+    getEnrolledCourses: () => {
+      const { courses, enrolledCourseIds } = get();
+      return courses.filter((course) => enrolledCourseIds.has(course.id));
     },
 
     setError: (error: string | null) => {

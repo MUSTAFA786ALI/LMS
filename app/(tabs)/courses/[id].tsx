@@ -147,19 +147,14 @@ export default function CourseDetailScreen() {
     toggleBookmark,
     addEnrollment,
     isBookmarked,
+    isEnrolled,
   } = useCourses();
 
-  const [isEnrolled, setIsEnrolled] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const webViewRef = useRef<WebView>(null);
 
   // Find the course
   const course = courses.find((c) => c.id === id);
-
-  useEffect(() => {
-    // Check if user is enrolled (would need to implement in real app)
-    setIsEnrolled(false);
-  }, [id]);
 
   if (isLoading && !course) {
     return (
@@ -190,7 +185,6 @@ export default function CourseDetailScreen() {
 
   const handleEnroll = async () => {
     addEnrollment(course.id);
-    setIsEnrolled(true);
   };
 
   const handleWebViewMessage = (event: any) => {
@@ -345,7 +339,7 @@ export default function CourseDetailScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          {!isEnrolled ? (
+          {!isEnrolled(course.id) ? (
             <Button
               label="Enroll Now"
               onPress={handleEnroll}

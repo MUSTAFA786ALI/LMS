@@ -74,8 +74,16 @@ export function useCourses() {
     }
   }, []);
 
+  const isEnrolled = useCallback((courseId: string) => {
+    return useCourseStore.getState().isEnrolled(courseId);
+  }, []);
+
   const getBookmarkedCourses = useCallback(() => {
     return useCourseStore.getState().getBookmarkedCourses();
+  }, []);
+
+  const getEnrolledCourses = useCallback(() => {
+    return useCourseStore.getState().getEnrolledCourses();
   }, []);
 
   const clearError = useCallback(() => {
@@ -104,7 +112,9 @@ export function useCourses() {
     toggleBookmark,
     isBookmarked,
     addEnrollment,
+    isEnrolled,
     getBookmarkedCourses,
+    getEnrolledCourses,
     clearError,
   };
 }
