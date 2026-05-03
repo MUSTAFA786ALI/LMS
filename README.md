@@ -168,6 +168,21 @@ npm run build
 6. **Profile** - User info, preferences, theme toggle
 7. **Course Detail** - Course info with WebView full content
 
+### Styling with NativeWind
+**UI Component Library** uses **NativeWind 4.2.3** for responsive, Tailwind CSS-based styling:
+- **8 core components** converted to NativeWind: Button, Input, LoadingSpinner, ErrorMessage, CourseCard, SearchBar, OfflineBanner, ErrorBoundary
+- **Dynamic className composition** with template literals for responsive design
+- **Theme-aware styling** using `useColorScheme()` for dark/light mode support
+- **Babel plugin configured** (`nativewind/babel`) for efficient Tailwind compilation
+- **Performance optimized** - No runtime style calculations, pure CSS class application
+
+Example component pattern:
+```typescript
+const isDark = useColorScheme() === 'dark';
+const containerClass = `flex items-center rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'}`;
+return <View className={containerClass}>...</View>;
+```
+
 ### Theme Support
 - **Light Mode** - Clean whites with blue accents (#0284C7)
 - **Dark Mode** - Deep blacks with cyan accents (#38BFEF)
