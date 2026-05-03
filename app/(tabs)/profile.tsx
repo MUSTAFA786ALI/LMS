@@ -10,12 +10,18 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/hooks/useAuth';
 import { usePreferencesStore } from '@/src/store/prefsStore';
 import { useNotifications } from '@/src/hooks/useNotifications';
+import { useCourseStore } from '@/src/store/courseStore';
+import { useProfileImage } from '@/src/hooks/useProfileImage';
+import { useBookmarkNotifications } from '@/src/hooks/useBookmarkNotifications';
+import { useInactivityReminder } from '@/src/hooks/useInactivityReminder';
 import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { Button } from '@/src/components/ui/Button';
 import { Colors, Spacing, FontSizes } from '@/src/constants/theme';
@@ -31,8 +37,20 @@ export default function ProfileScreen() {
   const inactivityReminderEnabled = usePreferencesStore((state) => state.inactivityReminderEnabled);
   const setInactivityReminderEnabled = usePreferencesStore((state) => state.setInactivityReminderEnabled);
 
+  // Get user statistics
+  const enrolledCourseIds = useCourseStore((state) => state.enrolledCourseIds);
+  const bookmarkedCourseIds = useCourseStore((state) => state.bookmarkedCourseIds);
+  
+  // Profile image hook
+  const { profileImage, pickImage, deleteImage, isLoading: imageLoading } = useProfileImage();
+  
+  // Notification hooks
   const { sendNotification } = useNotifications();
+  const { bookmarkCount } = useBookmarkNotifications();
+  useInactivityReminder();
+
   const [testNotificationLoading, setTestNotificationLoading] = useState(false);
+  const [imageActionModal, setImageActionModal] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -50,6 +68,18 @@ export default function ProfileScreen() {
 
   const handleInactivityReminderToggle = async () => {
     await setInactivityReminderEnabled(!inactivityReminderEnabled);
+  };
+
+  const handlePickImage = async () => {
+    const success = await pickImage();
+    if (success) {
+      setImageActionModal(false);
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    await deleteImage();
+    setImageActionModal(false);
   };
 
   const handleTestNotification = async () => {
@@ -75,12 +105,64 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile Header */}
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <MaterialIcons name="person" size={48} color={Colors.light.primary} />
-          </View>
+          <Pressable
+            style={styles.avatarContainer}
+            onPress={() => setImageActionModal(true)}
+          >
+            {profileImage ? (
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <MaterialIcons name="person" size={48} color={Colors.light.primary} />
+              </View>
+            )}
+            <View style={styles.editIconBg}>
+              <MaterialIcons name="camera-alt" size={16} color="white" />
+            </View>
+          </Pressable>
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>{user?.fullName || 'User'}</Text>
             <Text style={styles.userEmail}>{user?.email || 'email@example.com'}</Text>
+          </View>
+        </View>
+
+        {/* User Statistics Section */}
+        <View style={styles.statsSection}>
+          <View style={styles.statItem}>
+            <View style={styles.statIconBg}>
+              <MaterialIcons name="school" size={24} color={Colors.light.primary} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Enrolled</Text>
+              <Text style={styles.statValue}>{enrolledCourseIds.size}</Text>
+            </View>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <View style={styles.statIconBg}>
+              <MaterialIcons name="bookmark" size={24} color={Colors.light.warning} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Bookmarks</Text>
+              <Text style={styles.statValue}>{bookmarkCount}</Text>
+            </View>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <View style={styles.statIconBg}>
+              <MaterialIcons name="trending-up" size={24} color={Colors.light.success} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Progress</Text>
+              <Text style={styles.statValue}>{Math.round((enrolledCourseIds.size / Math.max(enrolledCourseIds.size + 1, 1)) * 100)}%</Text>
+            </View>
           </View>
         </View>
 
@@ -204,6 +286,56 @@ export default function ProfileScreen() {
           />
         </View>
       </ScrollView>
+
+      {/* Image Action Modal */}
+      <Modal
+        visible={imageActionModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setImageActionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Profile Picture</Text>
+              <Pressable onPress={() => setImageActionModal(false)}>
+                <MaterialIcons name="close" size={24} color={Colors.light.text} />
+              </Pressable>
+            </View>
+
+            <Button
+              label="Upload Photo"
+              onPress={handlePickImage}
+              variant="primary"
+              size="lg"
+              isFullWidth
+              leftIcon={<MaterialIcons name="upload" size={20} color="white" />}
+              style={styles.modalButton}
+            />
+
+            {profileImage && (
+              <Button
+                label="Delete Photo"
+                onPress={handleDeleteImage}
+                variant="danger"
+                size="lg"
+                isFullWidth
+                leftIcon={<MaterialIcons name="delete" size={20} color="white" />}
+                style={styles.modalButton}
+              />
+            )}
+
+            <Button
+              label="Cancel"
+              onPress={() => setImageActionModal(false)}
+              variant="secondary"
+              size="lg"
+              isFullWidth
+              style={styles.modalButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -228,6 +360,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: Spacing.md,
+  },
   avatar: {
     width: 64,
     height: 64,
@@ -235,7 +371,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: Spacing.md,
+  },
+  profileImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  editIconBg: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.light.cardBg,
   },
   profileInfo: {
     flex: 1,
@@ -249,6 +402,48 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: FontSizes.sm,
     color: Colors.light.textSecondary,
+  },
+  statsSection: {
+    flexDirection: 'row',
+    backgroundColor: Colors.light.cardBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: Spacing.xl,
+    overflow: 'hidden',
+  },
+  statItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.lg,
+  },
+  statIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  statContent: {
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: FontSizes.xs,
+    color: Colors.light.textSecondary,
+    marginBottom: 2,
+  },
+  statValue: {
+    fontSize: FontSizes.base,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: Colors.light.border,
   },
   section: {
     marginBottom: Spacing.xl,
@@ -310,5 +505,33 @@ const styles = StyleSheet.create({
   logoutSection: {
     marginTop: Spacing.xl,
     marginBottom: Spacing.lg,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    paddingBottom: Spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  modalTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  modalButton: {
+    marginBottom: Spacing.md,
   },
 });

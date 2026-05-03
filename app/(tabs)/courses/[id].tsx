@@ -154,6 +154,7 @@ export default function CourseDetailScreen() {
   const { sendNotification } = useNotifications();
 
   const [showWebView, setShowWebView] = useState(false);
+  const [webViewError, setWebViewError] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
 
   // Find the course
@@ -208,6 +209,12 @@ export default function CourseDetailScreen() {
     } else if (action === 'bookmark') {
       handleBookmark();
     }
+  };
+
+  const handleWebViewError = (event: any) => {
+    const error = event.nativeEvent?.description || 'Failed to load course content';
+    console.error('[CourseDetail] WebView error:', error);
+    setWebViewError(error);
   };
 
   return (
@@ -378,7 +385,7 @@ export default function CourseDetailScreen() {
       >
         <SafeAreaView style={styles.webViewContainer}>
           <View style={styles.webViewHeader}>
-            <Pressable onPress={() => setShowWebView(false)} hitSlop={12}>
+            <Pressable onPress={() => { setShowWebView(false); setWebViewError(null); }} hitSlop={12}>
               <MaterialIcons name="close" size={24} color={Colors.light.text} />
             </Pressable>
             <Text style={styles.webViewTitle} numberOfLines={1}>
@@ -387,18 +394,34 @@ export default function CourseDetailScreen() {
             <View style={{ width: 24 }} />
           </View>
 
-          <WebView
-            ref={webViewRef}
-            source={{ html: getCourseHTML(course) }}
-            onMessage={handleWebViewMessage}
-            style={{ flex: 1 }}
-            startInLoadingState
-            renderLoading={() => (
-              <View style={styles.webViewLoader}>
-                <LoadingSpinner size="large" color={Colors.light.primary} />
-              </View>
-            )}
-          />
+          {webViewError ? (
+            <View style={styles.webViewErrorContainer}>
+              <MaterialIcons name="error-outline" size={48} color={Colors.light.error} />
+              <Text style={styles.webViewErrorTitle}>Failed to Load Content</Text>
+              <Text style={styles.webViewErrorMessage}>{webViewError}</Text>
+              <Button
+                label="Retry"
+                onPress={() => setWebViewError(null)}
+                variant="primary"
+                size="lg"
+                style={styles.retryButton}
+              />
+            </View>
+          ) : (
+            <WebView
+              ref={webViewRef}
+              source={{ html: getCourseHTML(course) }}
+              onMessage={handleWebViewMessage}
+              onError={handleWebViewError}
+              style={{ flex: 1 }}
+              startInLoadingState
+              renderLoading={() => (
+                <View style={styles.webViewLoader}>
+                  <LoadingSpinner size="large" color={Colors.light.primary} />
+                </View>
+              )}
+            />
+          )}
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -610,5 +633,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  webViewErrorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.light.background,
+  },
+  webViewErrorTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  webViewErrorMessage: {
+    fontSize: FontSizes.base,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    lineHeight: 24,
+  },
+  retryButton: {
+    width: '100%',
   },
 });

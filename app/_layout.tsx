@@ -4,13 +4,15 @@
  */
 
 import "../global.css";
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { usePreferencesStore } from '@/src/store/prefsStore';
+import { useBookmarkNotifications } from '@/src/hooks/useBookmarkNotifications';
+import { useInactivityReminder } from '@/src/hooks/useInactivityReminder';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { OfflineBanner } from '@/src/components/OfflineBanner';
 import { Colors } from '@/src/constants/theme';
@@ -19,6 +21,10 @@ export default function RootLayout() {
   const systemColorScheme = useColorScheme();
   // Use individual selector to avoid creating new objects on every render
   const preferredTheme = usePreferencesStore((state) => state.theme);
+
+  // Initialize notification hooks
+  useBookmarkNotifications();
+  useInactivityReminder();
 
   // Determine active theme based on preference and system
   const activeTheme = useMemo(() => {
