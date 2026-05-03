@@ -15,7 +15,7 @@ export async function getInstructors(limit: number = 20): Promise<ApiResponse<In
       .get(`/api/v1/public/randomusers?limit=${limit}`)
       .then((res) => {
         // Transform API response to instructor format
-        const users = Array.isArray(res.data.data) ? res.data.data : [];
+        const users = Array.isArray(res.data.data?.data) ? res.data.data.data : [];
         return {
           statusCode: 200,
           data: users.map((user: any) => ({
@@ -43,14 +43,32 @@ export async function getInstructors(limit: number = 20): Promise<ApiResponse<In
 export async function getCourses(limit: number = 50): Promise<ApiResponse<Course[]>> {
   return retry(async () => {
     try {
+      console.log('[getCourses] Fetching courses with limit:', limit);
+      
       // Fetch products and instructors in parallel
       const [productsRes, instructorsRes] = await Promise.all([
         api.get(`/api/v1/public/randomproducts?limit=${limit}`),
         api.get(`/api/v1/public/randomusers?limit=${Math.ceil(limit / 3)}`),
       ]);
 
-      const products = Array.isArray(productsRes.data.data) ? productsRes.data.data : [];
-      const instructors = Array.isArray(instructorsRes.data.data) ? instructorsRes.data.data : [];
+      console.log('[getCourses] Products response:', {
+        statusCode: productsRes.status,
+        hasData: !!productsRes.data,
+        dataPath: !!productsRes.data?.data?.data,
+        itemCount: Array.isArray(productsRes.data?.data?.data) ? productsRes.data.data.data.length : 0,
+      });
+
+      console.log('[getCourses] Instructors response:', {
+        statusCode: instructorsRes.status,
+        hasData: !!instructorsRes.data,
+        dataPath: !!instructorsRes.data?.data?.data,
+        itemCount: Array.isArray(instructorsRes.data?.data?.data) ? instructorsRes.data.data.data.length : 0,
+      });
+
+      const products = Array.isArray(productsRes.data?.data?.data) ? productsRes.data.data.data : [];
+      const instructors = Array.isArray(instructorsRes.data?.data?.data) ? instructorsRes.data.data.data : [];
+
+      console.log('[getCourses] Extracted products:', products.length, 'instructors:', instructors.length);
 
       // Map products to courses
       const courses: Course[] = products.map((product: any, index: number) => ({
@@ -64,7 +82,7 @@ export async function getCourses(limit: number = 50): Promise<ApiResponse<Course
         enrolledCount: Math.floor(Math.random() * 1000) + 10,
         instructor: instructors[index % instructors.length]
           ? {
-              id: instructors[index % instructors.length]._id,
+              id: instructors[index % instructors.length]._id || instructors[index % instructors.length].id,
               firstName:
                 instructors[index % instructors.length].firstName ||
                 instructors[index % instructors.length].name?.split(' ')[0] ||
@@ -94,6 +112,8 @@ export async function getCourses(limit: number = 50): Promise<ApiResponse<Course
         createdAt: new Date().toISOString(),
       }));
 
+      console.log('[getCourses] Mapped courses:', courses.length);
+
       return {
         statusCode: 200,
         data: courses,
@@ -101,7 +121,7 @@ export async function getCourses(limit: number = 50): Promise<ApiResponse<Course
         success: true,
       };
     } catch (error) {
-      console.error('Error fetching courses:', error);
+      console.error('[getCourses] Error fetching courses:', error);
       throw error;
     }
   });

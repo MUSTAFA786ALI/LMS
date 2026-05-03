@@ -143,6 +143,8 @@ export const STORAGE_KEYS = {
   USER_PREFS: 'user_prefs',
   LAST_SYNC: 'last_sync',
   THEME: 'theme',
+  PROFILE_IMAGE: 'profile_image',
+  LAST_APP_OPEN: 'last_app_open',
 };
 
 /**

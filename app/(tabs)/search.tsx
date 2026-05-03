@@ -7,10 +7,10 @@ import React, { useEffect } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCourses } from '@/src/hooks/useCourses';
 import { SearchBar } from '@/src/components/SearchBar';

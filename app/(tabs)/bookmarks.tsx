@@ -7,11 +7,11 @@ import React, { useEffect } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   FlatList,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCourses } from '@/src/hooks/useCourses';
 import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';

@@ -106,7 +106,15 @@ export const useCourseStore = create<CourseStore>()(
       });
 
       try {
+        console.log('[CourseStore.fetchCourses] Starting fetch, forceRefresh:', forceRefresh);
         const response = await getCourses(50);
+
+        console.log('[CourseStore.fetchCourses] Response received:', {
+          success: response.success,
+          hasData: !!response.data,
+          dataLength: Array.isArray(response.data) ? response.data.length : 0,
+          message: response.message,
+        });
 
         if (!response.success || !response.data) {
           throw new Error(response.message || 'Failed to fetch courses');
@@ -118,6 +126,8 @@ export const useCourseStore = create<CourseStore>()(
         await storage.setObject(STORAGE_KEYS.COURSES_CACHE, courses);
         await storage.setString(STORAGE_KEYS.LAST_SYNC, Date.now().toString());
 
+        console.log('[CourseStore.fetchCourses] Courses cached:', courses.length);
+
         set((state) => {
           state.courses = courses;
           state.filteredCourses = courses;
@@ -125,9 +135,11 @@ export const useCourseStore = create<CourseStore>()(
           state.error = null;
           state.lastSyncTime = Date.now();
         });
+
+        console.log('[CourseStore.fetchCourses] State updated successfully');
       } catch (error: any) {
         const errorMessage = error.message || 'Failed to fetch courses. Using cached data.';
-        console.error('[CourseStore] Fetch error:', error);
+        console.error('[CourseStore.fetchCourses] Error:', errorMessage, error);
 
         set((state) => {
           state.isLoading = false;
