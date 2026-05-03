@@ -1,26 +1,17 @@
 /**
  * Input Component
- * Text input with label and error handling
+ * Text input with label and error handling using NativeWind
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TextInputProps,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { View, Text, TextInput, TextInputProps, useColorScheme } from 'react-native';
+import { Colors } from '../../constants/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  containerStyle?: ViewStyle;
 }
 
 export const Input = React.forwardRef<TextInput, InputProps>(
@@ -30,90 +21,54 @@ export const Input = React.forwardRef<TextInput, InputProps>(
       error,
       leftIcon,
       rightIcon,
-      containerStyle,
-      style,
       ...props
     }: InputProps,
     ref
   ) => {
     const hasError = !!error;
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+
+    const containerClass = 'w-full mb-3';
+    const labelClass = 'text-sm font-semibold mb-1';
+    const labelColorClass = isDark ? 'text-white' : 'text-black';
+
+    const inputContainerClass = `
+      flex flex-row items-center border rounded-lg px-3
+      ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-gray-50 border-gray-300'}
+      ${hasError ? (isDark ? 'border-red-600' : 'border-red-500') : ''}
+    `.trim();
+
+    const inputClass = `
+      flex-1 py-3 text-base
+      ${isDark ? 'text-white' : 'text-black'}
+    `.trim();
+
+    const errorClass = 'mt-1 text-xs text-red-500 dark:text-red-400';
 
     return (
-      <View style={[styles.container, containerStyle]}>
-        {label && <Text style={styles.label}>{label}</Text>}
+      <View className={containerClass}>
+        {label && <Text className={`${labelClass} ${labelColorClass}`}>{label}</Text>}
 
-        <View style={[styles.inputContainer, hasError && styles.inputContainerError]}>
-          {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
+        <View className={inputContainerClass}>
+          {leftIcon && <View className="mr-2">{leftIcon}</View>}
 
           <TextInput
             ref={ref}
             {...props}
-            style={[
-              styles.input,
-              leftIcon && styles.inputWithLeftIcon,
-              rightIcon && styles.inputWithRightIcon,
-              style,
-            ].filter(Boolean) as TextStyle[]}
-            placeholderTextColor={Colors.light.textTertiary}
+            className={inputClass}
+            placeholderTextColor={isDark ? Colors.dark.textTertiary : Colors.light.textTertiary}
           />
 
-          {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
+          {rightIcon && <View className="ml-2">{rightIcon}</View>}
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <Text className={errorClass}>{error}</Text>}
       </View>
     );
   }
 );
 
 Input.displayName = 'Input';
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    marginBottom: Spacing.md,
-  },
-  label: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.light.text,
-    marginBottom: Spacing.xs,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.surface,
-    paddingHorizontal: Spacing.md,
-  },
-  inputContainerError: {
-    borderColor: Colors.light.error,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    fontSize: FontSizes.base,
-    color: Colors.light.text,
-  },
-  inputWithLeftIcon: {
-    marginLeft: Spacing.sm,
-  },
-  inputWithRightIcon: {
-    marginRight: Spacing.sm,
-  },
-  iconLeft: {
-    marginRight: Spacing.sm,
-  },
-  iconRight: {
-    marginLeft: Spacing.sm,
-  },
-  error: {
-    marginTop: Spacing.xs,
-    fontSize: FontSizes.xs,
-    color: Colors.light.error,
-  },
-});
 
 export default Input;

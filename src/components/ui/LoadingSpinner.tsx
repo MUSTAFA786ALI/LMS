@@ -1,39 +1,34 @@
 /**
  * Loading Spinner Component
+ * Using NativeWind for styling
  */
 
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
+import { View, ActivityIndicator, useColorScheme } from 'react-native';
 import { Colors } from '../../constants/theme';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';
   color?: string;
-  style?: ViewStyle;
 }
 
 export const LoadingSpinner = React.memo(
   ({
     size = 'large',
-    color = Colors.light.primary,
-    style,
+    color,
   }: LoadingSpinnerProps) => {
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const defaultColor = color || (isDark ? Colors.dark.primary : Colors.light.primary);
+
     return (
-      <View style={[styles.container, style]}>
-        <ActivityIndicator size={size} color={color} />
+      <View className="justify-center items-center p-5">
+        <ActivityIndicator size={size} color={defaultColor} />
       </View>
     );
   }
 );
 
 LoadingSpinner.displayName = 'LoadingSpinner';
-
-const styles = StyleSheet.create({
-  container: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-});
 
 export default LoadingSpinner;

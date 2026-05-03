@@ -59,7 +59,6 @@ export default function SearchScreen() {
           value={searchQuery}
           onChangeText={searchCourses}
           placeholder="Search by course name..."
-          containerStyle={styles.searchBar}
         />
 
         {/* Error Message */}

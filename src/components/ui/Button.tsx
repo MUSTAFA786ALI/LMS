@@ -1,19 +1,12 @@
 /**
  * Button Component
- * Reusable button with variants
+ * Reusable button with variants using NativeWind
  */
 
 import React from 'react';
-import {
-  Pressable,
-  Text,
-  StyleSheet,
-  PressableProps,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import { Colors, Spacing, FontSizes, BorderRadius, Durations } from '../../constants/theme';
+import { Pressable, Text, PressableProps, ActivityIndicator } from 'react-native';
+import { useColorScheme } from 'react-native';
+import { Colors } from '../../constants/theme';
 
 interface ButtonProps extends PressableProps {
   label: string;
@@ -36,59 +29,67 @@ export const Button = React.memo(
     isDisabled = false,
     leftIcon,
     rightIcon,
-    style,
     onPress,
     ...props
   }: ButtonProps) => {
     const [isPressed, setIsPressed] = React.useState(false);
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
-    const variants = {
+    // Variant styles
+    const variantClasses = {
       primary: {
-        container: styles.primaryContainer,
-        text: styles.primaryText,
+        container: isDark ? 'bg-cyan-500' : 'bg-sky-500',
+        text: 'text-white',
       },
       secondary: {
-        container: styles.secondaryContainer,
-        text: styles.secondaryText,
+        container: isDark ? 'bg-gray-600' : 'bg-gray-200',
+        text: isDark ? 'text-white' : 'text-black',
       },
       danger: {
-        container: styles.dangerContainer,
-        text: styles.dangerText,
+        container: isDark ? 'bg-red-600' : 'bg-red-500',
+        text: 'text-white',
       },
     };
 
-    const sizes = {
+    // Size styles
+    const sizeClasses = {
       sm: {
-        container: styles.sizeSmContainer,
-        text: styles.sizeSmText,
+        container: 'px-3 py-2',
+        text: 'text-sm',
       },
       md: {
-        container: styles.sizeMdContainer,
-        text: styles.sizeMdText,
+        container: 'px-4 py-3',
+        text: 'text-base',
       },
       lg: {
-        container: styles.sizeLgContainer,
-        text: styles.sizeLgText,
+        container: 'px-6 py-4',
+        text: 'text-lg',
       },
     };
 
-    const selectedVariant = variants[variant];
-    const selectedSize = sizes[size];
+    const selectedVariant = variantClasses[variant];
+    const selectedSize = sizeClasses[size];
 
-    const containerStyle = [
-      styles.container,
-      selectedVariant.container,
-      selectedSize.container,
-      isFullWidth && styles.fullWidth,
-      isDisabled && styles.disabled,
-      isPressed && styles.pressed,
-      style,
-    ].filter(Boolean) as ViewStyle[];
+    const containerClass = `
+      flex flex-row items-center justify-center rounded-lg gap-2
+      ${selectedVariant.container}
+      ${selectedSize.container}
+      ${isFullWidth ? 'w-full' : ''}
+      ${isDisabled ? 'opacity-50' : ''}
+      ${isPressed && !isLoading ? 'opacity-80' : ''}
+    `.trim();
+
+    const textClass = `
+      font-semibold
+      ${selectedVariant.text}
+      ${selectedSize.text}
+    `.trim();
 
     return (
       <Pressable
         {...props}
-        style={containerStyle}
+        className={containerClass}
         onPress={(e) => {
           if (!isLoading && !isDisabled && onPress) {
             onPress(e);
@@ -100,11 +101,9 @@ export const Button = React.memo(
       >
         {leftIcon && !isLoading && <>{leftIcon}</>}
         {isLoading ? (
-          <ActivityIndicator color={Colors.light.text} size="small" />
+          <ActivityIndicator color={isDark ? Colors.dark.text : Colors.light.text} size="small" />
         ) : (
-          <Text style={[styles.text, selectedVariant.text, selectedSize.text]}>
-            {label}
-          </Text>
+          <Text className={textClass}>{label}</Text>
         )}
         {rightIcon && !isLoading && <>{rightIcon}</>}
       </Pressable>
@@ -113,70 +112,5 @@ export const Button = React.memo(
 );
 
 Button.displayName = 'Button';
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-  text: {
-    fontWeight: '600',
-  },
-
-  // Variants
-  primaryContainer: {
-    backgroundColor: Colors.light.primary,
-  },
-  primaryText: {
-    color: '#fff',
-  },
-  secondaryContainer: {
-    backgroundColor: Colors.light.border,
-  },
-  secondaryText: {
-    color: Colors.light.text,
-  },
-  dangerContainer: {
-    backgroundColor: Colors.light.error,
-  },
-  dangerText: {
-    color: '#fff',
-  },
-
-  // Sizes
-  sizeSmContainer: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  sizeSmText: {
-    fontSize: FontSizes.sm,
-  },
-  sizeMdContainer: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  sizeMdText: {
-    fontSize: FontSizes.base,
-  },
-  sizeLgContainer: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-  },
-  sizeLgText: {
-    fontSize: FontSizes.lg,
-  },
-});
 
 export default Button;

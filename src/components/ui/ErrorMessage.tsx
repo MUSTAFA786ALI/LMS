@@ -1,34 +1,40 @@
 /**
  * Error Message Component
+ * Using NativeWind for styling
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, Pressable } from 'react-native';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { View, Text, Pressable, useColorScheme } from 'react-native';
+import { Colors } from '../../constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface ErrorMessageProps {
   message: string;
   onDismiss?: () => void;
-  style?: ViewStyle;
 }
 
 export const ErrorMessage = React.memo(
-  ({ message, onDismiss, style }: ErrorMessageProps) => {
+  ({ message, onDismiss }: ErrorMessageProps) => {
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+
     if (!message) return null;
 
+    const containerClass = `
+      flex flex-row items-center rounded-lg px-3 py-3 mb-3 gap-2
+      ${isDark ? 'bg-red-900 border border-red-700' : 'bg-red-100 border border-red-500'}
+    `.trim();
+
+    const textClass = `flex-1 text-sm ${isDark ? 'text-red-200' : 'text-red-600'}`;
+    const errorColor = isDark ? Colors.dark.error : Colors.light.error;
+
     return (
-      <View style={[styles.container, style]}>
-        <MaterialIcons
-          name="error-outline"
-          size={20}
-          color={Colors.light.error}
-          style={styles.icon}
-        />
-        <Text style={styles.text}>{message}</Text>
+      <View className={containerClass}>
+        <MaterialIcons name="error-outline" size={20} color={errorColor} />
+        <Text className={textClass}>{message}</Text>
         {onDismiss && (
           <Pressable onPress={onDismiss}>
-            <MaterialIcons name="close" size={20} color={Colors.light.error} />
+            <MaterialIcons name="close" size={20} color={errorColor} />
           </Pressable>
         )}
       </View>
@@ -37,29 +43,5 @@ export const ErrorMessage = React.memo(
 );
 
 ErrorMessage.displayName = 'ErrorMessage';
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    borderColor: Colors.light.error,
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  icon: {
-    marginRight: Spacing.sm,
-  },
-  text: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    color: Colors.light.error,
-    fontWeight: '500',
-  },
-});
 
 export default ErrorMessage;

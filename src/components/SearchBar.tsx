@@ -1,12 +1,12 @@
 /**
  * SearchBar Component
- * Reusable search input with debouncing
+ * Reusable search input with debouncing using NativeWind
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TextInput, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { View, TextInput, Pressable, useColorScheme } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSizes } from '@/src/constants/theme';
+import { Colors } from '@/src/constants/theme';
 import { debounce } from '@/src/utils/helpers';
 
 interface SearchBarProps {
@@ -14,7 +14,6 @@ interface SearchBarProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   onClear?: () => void;
-  containerStyle?: ViewStyle;
   debounceDelay?: number;
   editable?: boolean;
 }
@@ -25,11 +24,13 @@ export const SearchBar = React.memo(
     onChangeText,
     placeholder = 'Search courses...',
     onClear,
-    containerStyle,
     debounceDelay = 300,
     editable = true,
   }: SearchBarProps) => {
     const [displayValue, setDisplayValue] = useState(value);
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+
     const debouncedSearch = useRef(
       debounce((text: string) => {
         onChangeText(text);
@@ -51,18 +52,27 @@ export const SearchBar = React.memo(
       onClear?.();
     };
 
+    const containerClass = `
+      flex flex-row items-center rounded-lg border h-12 px-3
+      ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-300'}
+    `.trim();
+
+    const inputClass = `
+      flex-1 text-base
+      ${isDark ? 'text-white' : 'text-black'}
+    `.trim();
+
     return (
-      <View style={[styles.container, containerStyle]}>
+      <View className={containerClass}>
         <MaterialIcons
           name="search"
           size={20}
-          color={Colors.light.textTertiary}
-          style={styles.searchIcon}
+          color={isDark ? Colors.dark.textTertiary : Colors.light.textTertiary}
         />
         <TextInput
-          style={styles.input}
+          className={`${inputClass} ml-2 p-0`}
           placeholder={placeholder}
-          placeholderTextColor={Colors.light.textTertiary}
+          placeholderTextColor={isDark ? Colors.dark.textTertiary : Colors.light.textTertiary}
           value={displayValue}
           onChangeText={handleChange}
           editable={editable}
@@ -74,8 +84,8 @@ export const SearchBar = React.memo(
             <MaterialIcons
               name="close"
               size={20}
-              color={Colors.light.textSecondary}
-              style={styles.clearIcon}
+              color={isDark ? Colors.dark.textSecondary : Colors.light.textSecondary}
+              style={{ marginLeft: 8 }}
             />
           </Pressable>
         )}
@@ -86,28 +96,4 @@ export const SearchBar = React.memo(
 
 SearchBar.displayName = 'SearchBar';
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.cardBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    paddingHorizontal: Spacing.md,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: Spacing.sm,
-  },
-  input: {
-    flex: 1,
-    fontSize: FontSizes.base,
-    color: Colors.light.text,
-    fontWeight: '400',
-    padding: 0,
-  },
-  clearIcon: {
-    marginLeft: Spacing.sm,
-  },
-});
+export default SearchBar;

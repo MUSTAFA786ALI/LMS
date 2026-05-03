@@ -1,11 +1,11 @@
 /**
  * Error Boundary Component
- * Catches and displays unhandled errors
+ * Catches and displays unhandled errors using NativeWind
  */
 
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../constants/theme';
+import { View, Text, Pressable, useColorScheme } from 'react-native';
+import { Colors } from '../constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface ErrorBoundaryState {
@@ -48,32 +48,37 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
+      // Use light theme by default for error screens
       return (
-        <View style={styles.container}>
-          <View style={styles.content}>
+        <View className="flex-1 justify-center items-center bg-white px-4">
+          <View className="items-center max-w-md">
             <MaterialIcons
               name="error-outline"
               size={48}
               color={Colors.light.error}
-              style={styles.icon}
+              style={{ marginBottom: 24 }}
             />
-            <Text style={styles.title}>Oops! Something went wrong</Text>
-            <Text style={styles.message}>
+            <Text className="text-2xl font-bold text-black mb-2 text-center">
+              Oops! Something went wrong
+            </Text>
+            <Text className="text-base text-gray-600 mb-6 text-center leading-relaxed">
               {this.state.error?.message || 'An unexpected error occurred'}
             </Text>
 
             {__DEV__ && (
-              <View style={styles.debugInfo}>
-                <Text style={styles.debugTitle}>Debug Info:</Text>
-                <Text style={styles.debugText}>{this.state.error?.toString()}</Text>
+              <View className="w-full bg-red-100 border border-red-500 rounded-lg p-3 mb-6">
+                <Text className="text-sm font-semibold text-red-600 mb-1">Debug Info:</Text>
+                <Text className="text-xs text-red-600 font-mono">
+                  {this.state.error?.toString()}
+                </Text>
               </View>
             )}
 
             <Pressable
-              style={[styles.button, styles.primaryButton]}
+              className="w-full bg-sky-500 py-3 rounded-lg items-center"
               onPress={this.handleReset}
             >
-              <Text style={styles.primaryButtonText}>Try Again</Text>
+              <Text className="text-white text-base font-semibold">Try Again</Text>
             </Pressable>
           </View>
         </View>
@@ -83,70 +88,5 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children;
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.light.background,
-    padding: Spacing.lg,
-  },
-  content: {
-    alignItems: 'center',
-    maxWidth: 400,
-  },
-  icon: {
-    marginBottom: Spacing.lg,
-  },
-  title: {
-    fontSize: FontSizes.xl,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: Spacing.sm,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: FontSizes.base,
-    color: Colors.light.textSecondary,
-    marginBottom: Spacing.lg,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  debugInfo: {
-    width: '100%',
-    backgroundColor: '#FFF0F0',
-    borderColor: Colors.light.error,
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  debugTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.light.error,
-    marginBottom: Spacing.xs,
-  },
-  debugText: {
-    fontSize: FontSizes.xs,
-    color: Colors.light.error,
-    fontFamily: 'monospace',
-  },
-  button: {
-    width: '100%',
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-  },
-  primaryButton: {
-    backgroundColor: Colors.light.primary,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: FontSizes.base,
-    fontWeight: '600',
-  },
-});
 
 export default ErrorBoundary;

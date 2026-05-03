@@ -1,16 +1,18 @@
 /**
  * Offline Banner Component
- * Shows when device is offline
+ * Shows when device is offline using NativeWind
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, useColorScheme } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { Colors, Spacing, FontSizes } from '../constants/theme';
+import { Colors } from '../constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export const OfflineBanner = React.memo(() => {
   const [isOnline, setIsOnline] = useState(true);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -23,33 +25,13 @@ export const OfflineBanner = React.memo(() => {
   if (isOnline) return null;
 
   return (
-    <View style={styles.container}>
-      <MaterialIcons name="wifi-off" size={16} color="#fff" style={styles.icon} />
-      <Text style={styles.text}>You are offline. Using cached data.</Text>
+    <View className={`flex flex-row items-center justify-center py-2 px-4 gap-2 ${isDark ? 'bg-red-900' : 'bg-red-600'}`}>
+      <MaterialIcons name="wifi-off" size={16} color="#fff" />
+      <Text className="text-xs text-white font-medium">You are offline. Using cached data.</Text>
     </View>
   );
 });
 
 OfflineBanner.displayName = 'OfflineBanner';
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.light.error,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.sm,
-  },
-  icon: {
-    marginRight: Spacing.xs,
-  },
-  text: {
-    fontSize: FontSizes.xs,
-    color: '#fff',
-    fontWeight: '500',
-  },
-});
 
 export default OfflineBanner;
