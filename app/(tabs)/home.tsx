@@ -8,11 +8,11 @@ import {
   View,
   ScrollView,
   Text,
-  SafeAreaView,
   StyleSheet,
   Pressable,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCourses } from '@/src/hooks/useCourses';
 import { useAuth } from '@/src/hooks/useAuth';

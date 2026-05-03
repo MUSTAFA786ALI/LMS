@@ -8,11 +8,11 @@ import {
   View,
   ScrollView,
   Text,
-  SafeAreaView,
   StyleSheet,
   Pressable,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useCourses } from '@/src/hooks/useCourses';
