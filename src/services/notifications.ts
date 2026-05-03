@@ -4,10 +4,10 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { AppState, AppStateStatus } from 'react-native';
 
 /**
  * Request notification permissions
+ * Safely handles cases where notifications aren't fully supported
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
@@ -20,6 +20,11 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     const { status: newStatus } = await Notifications.requestPermissionsAsync();
     return newStatus === 'granted';
   } catch (error) {
+    // Gracefully handle cases where notifications aren't available (e.g., Expo Go on SDK 53+)
+    if (error instanceof Error && error.message.includes('expo-notifications')) {
+      console.warn('[Notifications] expo-notifications not fully available in this environment');
+      return false;
+    }
     console.error('[Notifications] Error requesting permissions:', error);
     return false;
   }
@@ -33,6 +38,7 @@ export async function areNotificationsEnabled(): Promise<boolean> {
     const { status } = await Notifications.getPermissionsAsync();
     return status === 'granted';
   } catch {
+    // Default to false if we can't check
     return false;
   }
 }

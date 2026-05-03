@@ -3,29 +3,21 @@
  * Main app router with auth-based navigation and theme support
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { View, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { useAuthStore } from '@/src/store/authStore';
 import { usePreferencesStore } from '@/src/store/prefsStore';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { OfflineBanner } from '@/src/components/OfflineBanner';
 import { Colors } from '@/src/constants/theme';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 export default function RootLayout() {
   const systemColorScheme = useColorScheme();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoading = useAuthStore((state) => state.isLoading);
-  const { theme: preferredTheme } = usePreferencesStore((state) => ({
-    theme: state.theme,
-  }));
+  // Use individual selector to avoid creating new objects on every render
+  const preferredTheme = usePreferencesStore((state) => state.theme);
 
   // Determine active theme based on preference and system
   const activeTheme = useMemo(() => {
@@ -69,17 +61,16 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: isDark ? Colors.dark.background : Colors.light.background }}>
         <OfflineBanner />
         <ThemeProvider value={isDark ? customDarkTheme : customLightTheme}>
-          <Stack>
-            {isAuthenticated ? (
-              <>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
-              </>
-            ) : (
-              <>
-                <Stack.Screen name="(auth)" options={{ headerShown: false, gestureEnabled: false }} />
-              </>
-            )}
-            <Stack.Screen name="index" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              gestureEnabled: false,
+              animationEnabled: false,
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
           </Stack>
           <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor="transparent" />
         </ThemeProvider>

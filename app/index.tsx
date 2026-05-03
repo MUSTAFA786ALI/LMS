@@ -1,6 +1,6 @@
 /**
  * Splash/Index Screen
- * Handles app initialization and routing
+ * Handles app initialization - stores are hydrated here
  */
 
 import React, { useEffect } from 'react';
@@ -17,7 +17,6 @@ export default function SplashScreen() {
   const router = useRouter();
   const [isInitialized, setIsInitialized] = React.useState(false);
 
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hydrateAuth = useAuthStore((state) => state.hydrate);
   const hydrateCourses = useCourseStore((state) => state.hydrate);
   const hydratePrefs = usePreferencesStore((state) => state.hydrate);
@@ -33,17 +32,24 @@ export default function SplashScreen() {
 
         setIsInitialized(true);
 
-        // Route based on auth state
-        if (useAuthStore.getState().isAuthenticated) {
-          router.replace('/(tabs)/home');
-        } else {
-          router.replace('/(auth)/login');
-        }
+        // Get current auth state and navigate after layout is ready
+        const isAuthenticated = useAuthStore.getState().isAuthenticated;
+        
+        // Use a small timeout to ensure layout is mounted
+        setTimeout(() => {
+          if (isAuthenticated) {
+            router.replace('/(tabs)/home');
+          } else {
+            router.replace('/(auth)/login');
+          }
+        }, 100);
       } catch (error) {
         console.error('[SplashScreen] Initialization error:', error);
-        // Default to login on error
         setIsInitialized(true);
-        router.replace('/(auth)/login');
+        // Default to login on error
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 100);
       }
     };
 
