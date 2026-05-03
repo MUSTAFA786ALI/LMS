@@ -66,8 +66,9 @@ export default function RegisterScreen() {
         const result = await register(data.email, data.password, data.username);
 
         if (result.success) {
-          // Navigate to home screen
-          router.replace('/(tabs)/home');
+          // After successful registration, redirect to login screen
+          // User needs to login to get auth tokens
+          router.replace('/(auth)/login');
         } else {
           setSubmitError(result.error || 'Registration failed');
         }

@@ -163,20 +163,16 @@ export const useAuthStore = create<AuthStore>()(
           throw new Error(response.message || 'Registration failed');
         }
 
-        const { user, accessToken, refreshToken } = response.data;
+        const { user } = response.data;
 
-        // Store tokens in secure storage
-        await secureStorage.set(STORAGE_KEYS.AUTH_TOKEN, accessToken);
-        if (refreshToken) {
-          await secureStorage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-        }
-
-        // Cache user in AsyncStorage
+        // Only cache user, don't store tokens (registration doesn't return them)
+        // User will need to login to get tokens
         await storage.setObject(STORAGE_KEYS.USER, user);
 
         set((state) => {
           state.user = user;
-          state.isAuthenticated = true;
+          // Don't mark as authenticated yet - need to login first to get tokens
+          state.isAuthenticated = false;
           state.isLoading = false;
           state.error = null;
         });
