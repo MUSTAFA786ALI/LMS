@@ -30,8 +30,8 @@ export interface LoginCredentials {
 }
 
 export interface RegisterCredentials extends LoginCredentials {
-  fullName: string;
-  confirmPassword: string;
+  username: string;
+  role?: string;
 }
 
 export interface AuthResponse {

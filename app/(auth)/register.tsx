@@ -28,7 +28,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 // Validation schema
 const registerSchema = z
   .object({
-    fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+    username: z.string().min(3, 'Username must be at least 3 characters'),
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
@@ -50,7 +50,7 @@ export default function RegisterScreen() {
   const { control, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      fullName: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -63,7 +63,7 @@ export default function RegisterScreen() {
       clearError();
 
       try {
-        const result = await register(data.email, data.password, data.fullName);
+        const result = await register(data.email, data.password, data.username);
 
         if (result.success) {
           // Navigate to home screen
@@ -110,19 +110,19 @@ export default function RegisterScreen() {
               />
             )}
 
-            {/* Full Name Field */}
+            {/* Username Field */}
             <Controller
               control={control}
-              name="fullName"
+              name="username"
               render={({ field: { value, onChange, onBlur } }) => (
                 <Input
-                  label="Full Name"
-                  placeholder="Enter your full name"
+                  label="Username"
+                  placeholder="Choose a username"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  autoCapitalize="words"
-                  error={errors.fullName?.message}
+                  autoCapitalize="none"
+                  error={errors.username?.message}
                   editable={!isLoading}
                   leftIcon={<MaterialIcons name="person" size={20} color={Colors.light.primary} />}
                 />

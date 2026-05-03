@@ -143,14 +143,14 @@ export const useAuthStore = create<AuthStore>()(
       }
     },
 
-    register: async (email: string, password: string, fullName: string) => {
+    register: async (email: string, password: string, username: string) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;
       });
 
       try {
-        const response = await registerUser({ email, password, fullName });
+        const response = await registerUser({ email, password, username, role: 'USER' });
 
         console.log('[AuthStore] Register response received:', {
           success: response.success,
