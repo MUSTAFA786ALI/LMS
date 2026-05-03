@@ -3,6 +3,7 @@
  * Main app router with auth-based navigation and theme support
  */
 
+import "./global.css";
 import React, { useMemo } from 'react';
 import { View, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
