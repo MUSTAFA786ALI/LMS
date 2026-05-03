@@ -12,7 +12,7 @@ import { ApiResponse } from '../types/api.d';
 export async function getInstructors(limit: number = 20): Promise<ApiResponse<Instructor[]>> {
   return retry(() =>
     api
-      .get(`/api/v1/public/randomusers?limit=${limit}`)
+      .get(`/public/randomusers?limit=${limit}`)
       .then((res) => {
         // Transform API response to instructor format
         const users = Array.isArray(res.data.data) ? res.data.data : [];
@@ -45,8 +45,8 @@ export async function getCourses(limit: number = 50): Promise<ApiResponse<Course
     try {
       // Fetch products and instructors in parallel
       const [productsRes, instructorsRes] = await Promise.all([
-        api.get(`/api/v1/public/randomproducts?limit=${limit}`),
-        api.get(`/api/v1/public/randomusers?limit=${Math.ceil(limit / 3)}`),
+        api.get(`/public/randomproducts?limit=${limit}`),
+        api.get(`/public/randomusers?limit=${Math.ceil(limit / 3)}`),
       ]);
 
       const products = Array.isArray(productsRes.data.data) ? productsRes.data.data : [];

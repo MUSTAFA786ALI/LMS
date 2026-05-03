@@ -15,7 +15,7 @@ export async function registerUser(data: {
   fullName: string;
 }): Promise<AuthResponse> {
   return retry(() =>
-    api.post('/api/v1/users/register', data).then((res) => res.data)
+    api.post('/users/register', data).then((res) => res.data)
   );
 }
 
@@ -23,21 +23,21 @@ export async function registerUser(data: {
  * Login user with credentials
  */
 export async function loginUser(data: { email: string; password: string }): Promise<AuthResponse> {
-  return retry(() => api.post('/api/v1/users/login', data).then((res) => res.data));
+  return retry(() => api.post('/users/login', data).then((res) => res.data));
 }
 
 /**
  * Get current authenticated user
  */
 export async function getCurrentUser(): Promise<ApiResponse<User>> {
-  return retry(() => api.get('/api/v1/users/current-user').then((res) => res.data));
+  return retry(() => api.get('/users/current-user').then((res) => res.data));
 }
 
 /**
  * Logout user
  */
 export async function logoutUser(): Promise<ApiResponse<null>> {
-  return retry(() => api.post('/api/v1/users/logout').then((res) => res.data));
+  return retry(() => api.post('/users/logout').then((res) => res.data));
 }
 
 /**
