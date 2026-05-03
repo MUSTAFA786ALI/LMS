@@ -24,21 +24,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const {
-    theme,
-    setTheme,
-    notificationsEnabled,
-    setNotificationsEnabled,
-    inactivityReminderEnabled,
-    setInactivityReminderEnabled,
-  } = usePreferencesStore((state) => ({
-    theme: state.theme,
-    setTheme: state.setTheme,
-    notificationsEnabled: state.notificationsEnabled,
-    setNotificationsEnabled: state.setNotificationsEnabled,
-    inactivityReminderEnabled: state.inactivityReminderEnabled,
-    setInactivityReminderEnabled: state.setInactivityReminderEnabled,
-  }));
+  const theme = usePreferencesStore((state) => state.theme);
+  const setTheme = usePreferencesStore((state) => state.setTheme);
+  const notificationsEnabled = usePreferencesStore((state) => state.notificationsEnabled);
+  const setNotificationsEnabled = usePreferencesStore((state) => state.setNotificationsEnabled);
+  const inactivityReminderEnabled = usePreferencesStore((state) => state.inactivityReminderEnabled);
+  const setInactivityReminderEnabled = usePreferencesStore((state) => state.setInactivityReminderEnabled);
 
   const { sendNotification } = useNotifications();
   const [testNotificationLoading, setTestNotificationLoading] = useState(false);
