@@ -15,7 +15,10 @@ export async function registerUser(data: {
   fullName: string;
 }): Promise<AuthResponse> {
   return retry(() =>
-    api.post('/users/register', data).then((res) => res.data)
+    api.post('/users/register', data).then((res) => {
+      console.log('[API] Register response:', JSON.stringify(res.data, null, 2));
+      return res.data;
+    })
   );
 }
 
@@ -23,7 +26,12 @@ export async function registerUser(data: {
  * Login user with credentials
  */
 export async function loginUser(data: { email: string; password: string }): Promise<AuthResponse> {
-  return retry(() => api.post('/users/login', data).then((res) => res.data));
+  return retry(() =>
+    api.post('/users/login', data).then((res) => {
+      console.log('[API] Login response:', JSON.stringify(res.data, null, 2));
+      return res.data;
+    })
+  );
 }
 
 /**

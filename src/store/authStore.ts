@@ -101,6 +101,13 @@ export const useAuthStore = create<AuthStore>()(
       try {
         const response = await loginUser({ email, password });
 
+        console.log('[AuthStore] Login response received:', {
+          success: response.success,
+          hasData: !!response.data,
+          dataKeys: response.data ? Object.keys(response.data) : [],
+          fullResponse: response,
+        });
+
         if (!response.success || !response.data) {
           throw new Error(response.message || 'Login failed');
         }
@@ -144,6 +151,13 @@ export const useAuthStore = create<AuthStore>()(
 
       try {
         const response = await registerUser({ email, password, fullName });
+
+        console.log('[AuthStore] Register response received:', {
+          success: response.success,
+          hasData: !!response.data,
+          dataKeys: response.data ? Object.keys(response.data) : [],
+          fullResponse: response,
+        });
 
         if (!response.success || !response.data) {
           throw new Error(response.message || 'Registration failed');
