@@ -4,8 +4,7 @@
  */
 
 import React from 'react';
-import { Pressable, Text, PressableProps, ActivityIndicator } from 'react-native';
-import { useColorScheme } from 'react-native';
+import { Pressable, Text, PressableProps, ActivityIndicator, useColorScheme } from 'react-native';
 import { Colors } from '../../constants/theme';
 
 interface ButtonProps extends PressableProps {

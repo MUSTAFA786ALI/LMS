@@ -6,7 +6,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, useColorScheme } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { Colors } from '../constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export const OfflineBanner = React.memo(() => {

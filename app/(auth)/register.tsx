@@ -22,7 +22,6 @@ import { useAuth } from '@/src/hooks/useAuth';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ErrorMessage } from '@/src/components/ui/ErrorMessage';
-import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { Colors, Spacing, FontSizes } from '@/src/constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 

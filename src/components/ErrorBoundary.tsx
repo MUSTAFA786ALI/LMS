@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, Pressable, useColorScheme } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 

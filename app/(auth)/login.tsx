@@ -22,7 +22,6 @@ import { useAuth } from '@/src/hooks/useAuth';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ErrorMessage } from '@/src/components/ui/ErrorMessage';
-import { LoadingSpinner } from '@/src/components/ui/LoadingSpinner';
 import { Colors, Spacing, FontSizes } from '@/src/constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -163,7 +162,7 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <Pressable onPress={() => router.push('/(auth)/register')} disabled={isLoading}>
               <Text style={styles.footerLink}>Sign up</Text>
             </Pressable>

@@ -151,6 +151,7 @@ export default function CourseDetailScreen() {
     isBookmarked,
     isEnrolled,
   } = useCourses();
+  const { sendNotification } = useNotifications();
 
   const [showWebView, setShowWebView] = useState(false);
   const webViewRef = useRef<WebView>(null);
@@ -191,7 +192,6 @@ export default function CourseDetailScreen() {
     // Send enrollment notification if enabled
     const { notificationsEnabled } = usePreferencesStore.getState();
     if (notificationsEnabled) {
-      const { sendNotification } = useNotifications();
       await sendNotification({
         title: 'Course Enrolled',
         body: `You've successfully enrolled in ${course.title}. Start learning!`,
@@ -317,9 +317,9 @@ export default function CourseDetailScreen() {
           </View>
         </View>
 
-        {/* What You'll Learn */}
+        {/* What You&apos;ll Learn */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What You'll Learn</Text>
+          <Text style={styles.sectionTitle}>What You&apos;ll Learn</Text>
           {['Master core concepts', 'Build real projects', 'Get certified'].map(
             (item, index) => (
               <View key={index} style={styles.learningItem}>
