@@ -1,9 +1,47 @@
 /**
  * Notifications Service
  * Handles local notification permissions and scheduling
+ * Gracefully handles Expo Go limitations where notifications may not be fully available
  */
 
-import * as Notifications from 'expo-notifications';
+// Flag to track if notifications are available
+let notificationsAvailable = true;
+let Notifications: any = null;
+
+/**
+ * Safely load the notifications module
+ */
+function getNotifications() {
+  if (Notifications !== null) {
+    return Notifications;
+  }
+
+  try {
+    Notifications = require('expo-notifications');
+    
+    // Try to initialize handler
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    } catch (error) {
+      notificationsAvailable = false;
+      console.warn('[Notifications] Handler initialization failed:', error);
+    }
+
+    return Notifications;
+  } catch (error) {
+    notificationsAvailable = false;
+    console.warn('[Notifications] Failed to load expo-notifications:', error);
+    return null;
+  }
+}
 
 /**
  * Request notification permissions
@@ -11,21 +49,23 @@ import * as Notifications from 'expo-notifications';
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      console.warn('[Notifications] Notifications not available in this environment');
+      return false;
+    }
+
+    const { status } = await Notif.getPermissionsAsync();
 
     if (status === 'granted') {
       return true;
     }
 
-    const { status: newStatus } = await Notifications.requestPermissionsAsync();
+    const { status: newStatus } = await Notif.requestPermissionsAsync();
     return newStatus === 'granted';
   } catch (error) {
-    // Gracefully handle cases where notifications aren't available (e.g., Expo Go on SDK 53+)
-    if (error instanceof Error && error.message.includes('expo-notifications')) {
-      console.warn('[Notifications] expo-notifications not fully available in this environment');
-      return false;
-    }
-    console.error('[Notifications] Error requesting permissions:', error);
+    notificationsAvailable = false;
+    console.warn('[Notifications] Error requesting permissions:', error);
     return false;
   }
 }
@@ -35,10 +75,14 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  */
 export async function areNotificationsEnabled(): Promise<boolean> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      return false;
+    }
+    const { status } = await Notif.getPermissionsAsync();
     return status === 'granted';
   } catch {
-    // Default to false if we can't check
+    notificationsAvailable = false;
     return false;
   }
 }
@@ -53,6 +97,12 @@ export async function sendLocalNotification(data: {
   delayMs?: number;
 }): Promise<string | null> {
   try {
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      console.warn('[Notifications] Notifications not available');
+      return null;
+    }
+
     const hasPermission = await areNotificationsEnabled();
 
     if (!hasPermission) {
@@ -60,7 +110,7 @@ export async function sendLocalNotification(data: {
       return null;
     }
 
-    const notificationId = await Notifications.scheduleNotificationAsync({
+    const notificationId = await Notif.scheduleNotificationAsync({
       content: {
         title: data.title,
         body: data.body,
@@ -68,13 +118,14 @@ export async function sendLocalNotification(data: {
         sound: 'default',
       },
       trigger: data.delayMs ? {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        type: Notif.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: Math.ceil(data.delayMs / 1000),
       } : null,
     });
 
     return notificationId;
   } catch (error) {
+    notificationsAvailable = false;
     console.error('[Notifications] Error sending notification:', error);
     return null;
   }
@@ -90,6 +141,12 @@ export async function scheduleNotificationAt(data: {
   data?: Record<string, any>;
 }): Promise<string | null> {
   try {
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      console.warn('[Notifications] Notifications not available');
+      return null;
+    }
+
     const hasPermission = await areNotificationsEnabled();
 
     if (!hasPermission) {
@@ -97,7 +154,7 @@ export async function scheduleNotificationAt(data: {
       return null;
     }
 
-    const notificationId = await Notifications.scheduleNotificationAsync({
+    const notificationId = await Notif.scheduleNotificationAsync({
       content: {
         title: data.title,
         body: data.body,
@@ -105,13 +162,14 @@ export async function scheduleNotificationAt(data: {
         sound: 'default',
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        type: Notif.SchedulableTriggerInputTypes.DATE,
         date: data.fireDate,
       },
     });
 
     return notificationId;
   } catch (error) {
+    notificationsAvailable = false;
     console.error('[Notifications] Error scheduling notification:', error);
     return null;
   }
@@ -127,6 +185,12 @@ export async function scheduleRecurringNotification(data: {
   data?: Record<string, any>;
 }): Promise<string | null> {
   try {
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      console.warn('[Notifications] Notifications not available');
+      return null;
+    }
+
     const hasPermission = await areNotificationsEnabled();
 
     if (!hasPermission) {
@@ -134,7 +198,7 @@ export async function scheduleRecurringNotification(data: {
       return null;
     }
 
-    const notificationId = await Notifications.scheduleNotificationAsync({
+    const notificationId = await Notif.scheduleNotificationAsync({
       content: {
         title: data.title,
         body: data.body,
@@ -142,7 +206,7 @@ export async function scheduleRecurringNotification(data: {
         sound: 'default',
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        type: Notif.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: data.seconds,
         repeats: true,
       },
@@ -150,6 +214,7 @@ export async function scheduleRecurringNotification(data: {
 
     return notificationId;
   } catch (error) {
+    notificationsAvailable = false;
     console.error('[Notifications] Error scheduling recurring notification:', error);
     return null;
   }
@@ -160,7 +225,11 @@ export async function scheduleRecurringNotification(data: {
  */
 export async function cancelNotification(notificationId: string): Promise<void> {
   try {
-    await Notifications.cancelScheduledNotificationAsync(notificationId);
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      return;
+    }
+    await Notif.cancelScheduledNotificationAsync(notificationId);
   } catch (error) {
     console.error('[Notifications] Error canceling notification:', error);
   }
@@ -171,7 +240,11 @@ export async function cancelNotification(notificationId: string): Promise<void> 
  */
 export async function cancelAllNotifications(): Promise<void> {
   try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      return;
+    }
+    await Notif.cancelAllScheduledNotificationsAsync();
   } catch (error) {
     console.error('[Notifications] Error canceling all notifications:', error);
   }
@@ -181,30 +254,41 @@ export async function cancelAllNotifications(): Promise<void> {
  * Set up notification handler
  */
 export function setNotificationHandler(
-  onReceived?: (notification: Notifications.Notification) => void,
-  onTapped?: (response: Notifications.NotificationResponse) => void
+  onReceived?: (notification: any) => void,
+  onTapped?: (response: any) => void
 ): void {
-  Notifications.setNotificationHandler({
-    handleNotification: async (notification) => {
-      onReceived?.(notification);
-      return {
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      };
-    },
-  });
+  try {
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      console.warn('[Notifications] Notifications not available, handler not set');
+      return;
+    }
 
-  if (onTapped) {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      onTapped(response);
+    Notif.setNotificationHandler({
+      handleNotification: async (notification: any) => {
+        onReceived?.(notification);
+        return {
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        };
+      },
     });
 
-    if (typeof subscription !== 'undefined') {
-      // Return cleanup function through a separate mechanism
-      subscription.remove();
+    if (onTapped) {
+      const subscription = Notif.addNotificationResponseReceivedListener((response: any) => {
+        onTapped(response);
+      });
+
+      if (typeof subscription !== 'undefined') {
+        // Return cleanup function through a separate mechanism
+        subscription.remove();
+      }
     }
+  } catch (error) {
+    notificationsAvailable = false;
+    console.error('[Notifications] Error setting up notification handler:', error);
   }
 }

@@ -24,8 +24,23 @@ export default function SplashScreen() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Hydrate all stores in parallel
-        await Promise.all([hydrateAuth(), hydrateCourses(), hydratePrefs()]);
+        console.log('[SplashScreen] Starting app initialization');
+        
+        // Add timeout to prevent infinite loading (10 seconds)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Hydration timeout - took too long')), 10000)
+        );
+
+        // Hydrate all stores in parallel with timeout protection
+        try {
+          await Promise.race([
+            Promise.all([hydrateAuth(), hydrateCourses(), hydratePrefs()]),
+            timeoutPromise
+          ]);
+        } catch (hydrationError: any) {
+          console.warn('[SplashScreen] Hydration warning (continuing anyway):', hydrationError.message);
+          // Continue with partial hydration instead of blocking
+        }
 
         // Small delay for better UX
         await new Promise((resolve) => setTimeout(resolve, 500));

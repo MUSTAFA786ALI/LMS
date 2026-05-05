@@ -55,46 +55,63 @@ export const useCourseStore = create<CourseStore>()(
 
     // Actions
     hydrate: async () => {
+      console.log('[CourseStore] Starting hydration');
       set((state) => {
         state.isLoading = true;
       });
 
       try {
-        // Try to load from cache
-        const cachedCourses = await storage.getObject<Course[]>(STORAGE_KEYS.COURSES_CACHE);
-        const cachedBookmarks = await storage.getObject<string[]>(STORAGE_KEYS.BOOKMARKS);
-        const cachedEnrollments = await storage.getObject<string[]>(STORAGE_KEYS.ENROLLMENTS);
-        const cachedLastSync = await storage.getString(STORAGE_KEYS.LAST_SYNC);
+        // Try to load from cache (non-blocking)
+        const cachedCourses = await Promise.race([
+          storage.getObject<Course[]>(STORAGE_KEYS.COURSES_CACHE),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+        ]);
+        
+        const cachedBookmarks = await Promise.race([
+          storage.getObject<string[]>(STORAGE_KEYS.BOOKMARKS),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+        ]);
+        
+        const cachedEnrollments = await Promise.race([
+          storage.getObject<string[]>(STORAGE_KEYS.ENROLLMENTS),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+        ]);
+        
+        const cachedLastSync = await Promise.race([
+          storage.getString(STORAGE_KEYS.LAST_SYNC),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+        ]);
 
         const lastSync = cachedLastSync ? parseInt(cachedLastSync, 10) : 0;
         const cacheExpiry = 30 * 60 * 1000; // 30 minutes
 
         set((state) => {
-          if (cachedCourses) {
+          if (cachedCourses && Array.isArray(cachedCourses)) {
             state.courses = cachedCourses;
             state.filteredCourses = cachedCourses;
+            console.log('[CourseStore] Loaded cached courses:', cachedCourses.length);
           }
-          if (cachedBookmarks) {
+          if (cachedBookmarks && Array.isArray(cachedBookmarks)) {
             state.bookmarkedCourseIds = new Set(cachedBookmarks);
           }
-          if (cachedEnrollments) {
+          if (cachedEnrollments && Array.isArray(cachedEnrollments)) {
             state.enrolledCourseIds = new Set(cachedEnrollments);
           }
           state.lastSyncTime = lastSync;
+          state.isLoading = false; // Mark as loaded even if cache is empty
         });
 
-        // Refresh if cache is old
+        // Refresh in background if cache is old (don't wait for this)
         if (Date.now() - lastSync > cacheExpiry) {
-          await get().fetchCourses(true);
-        } else {
-          set((state) => {
-            state.isLoading = false;
+          console.log('[CourseStore] Cache expired, refreshing in background');
+          get().fetchCourses(true).catch((error) => {
+            console.warn('[CourseStore] Background refresh failed:', error.message);
           });
         }
       } catch (error) {
         console.error('[CourseStore] Hydration error:', error);
         set((state) => {
-          state.isLoading = false;
+          state.isLoading = false; // Don't block on errors
         });
       }
     },
@@ -123,8 +140,10 @@ export const useCourseStore = create<CourseStore>()(
         const courses = response.data;
 
         // Cache courses
-        await storage.setObject(STORAGE_KEYS.COURSES_CACHE, courses);
-        await storage.setString(STORAGE_KEYS.LAST_SYNC, Date.now().toString());
+        await Promise.all([
+          storage.setObject(STORAGE_KEYS.COURSES_CACHE, courses),
+          storage.setString(STORAGE_KEYS.LAST_SYNC, Date.now().toString())
+        ]);
 
         console.log('[CourseStore.fetchCourses] Courses cached:', courses.length);
 
@@ -141,9 +160,29 @@ export const useCourseStore = create<CourseStore>()(
         const errorMessage = error.message || 'Failed to fetch courses. Using cached data.';
         console.error('[CourseStore.fetchCourses] Error:', errorMessage, error);
 
+        // Fallback: try to use cached data even if fetch failed
+        try {
+          const cachedCourses = await storage.getObject<Course[]>(STORAGE_KEYS.COURSES_CACHE);
+          if (cachedCourses && cachedCourses.length > 0) {
+            console.log('[CourseStore.fetchCourses] Using cached fallback courses:', cachedCourses.length);
+            set((state) => {
+              state.courses = cachedCourses;
+              state.filteredCourses = cachedCourses;
+              state.isLoading = false;
+              state.error = `${errorMessage} (using cached data)`;
+              state.lastSyncTime = Date.now();
+            });
+            return; // Success with fallback, don't throw
+          }
+        } catch (fallbackError) {
+          console.error('[CourseStore.fetchCourses] Fallback cache load failed:', fallbackError);
+        }
+
+        // If no cache available, still mark as not loading but with error
         set((state) => {
           state.isLoading = false;
           state.error = errorMessage;
+          // Keep existing courses if any
         });
 
         throw error;

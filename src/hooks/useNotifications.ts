@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
 import {
   requestNotificationPermissions,
   sendLocalNotification,
@@ -70,8 +69,8 @@ export function useNotifications() {
   };
 
   const setupHandler = (
-    onReceived?: (notification: Notifications.Notification) => void,
-    onTapped?: (response: Notifications.NotificationResponse) => void
+    onReceived?: (notification: any) => void,
+    onTapped?: (response: any) => void
   ) => {
     setupNotificationHandler(onReceived, onTapped);
   };

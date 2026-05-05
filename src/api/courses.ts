@@ -45,10 +45,20 @@ export async function getCourses(limit: number = 50): Promise<ApiResponse<Course
     try {
       console.log('[getCourses] Fetching courses with limit:', limit);
       
-      // Fetch products and instructors in parallel
-      const [productsRes, instructorsRes] = await Promise.all([
+      // Create a timeout promise for 8 seconds
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('API call timeout - course fetch took too long')), 8000)
+      );
+
+      // Fetch products and instructors in parallel with timeout
+      const fetchPromise = Promise.all([
         api.get(`/api/v1/public/randomproducts?limit=${limit}`),
         api.get(`/api/v1/public/randomusers?limit=${Math.ceil(limit / 3)}`),
+      ]);
+
+      const [productsRes, instructorsRes] = await Promise.race([
+        fetchPromise,
+        timeoutPromise
       ]);
 
       console.log('[getCourses] Products response:', {
@@ -71,46 +81,56 @@ export async function getCourses(limit: number = 50): Promise<ApiResponse<Course
       console.log('[getCourses] Extracted products:', products.length, 'instructors:', instructors.length);
 
       // Map products to courses
-      const courses: Course[] = products.map((product: any, index: number) => ({
-        id: product._id || product.id || `course-${index}`,
-        title: product.title || product.name || 'Untitled Course',
-        description: product.description || 'No description available',
-        thumbnail: product.image || product.thumbnail,
-        price: product.price || Math.random() * 100,
-        rating: product.rating || Math.random() * 5,
-        duration: Math.floor(Math.random() * 40) + 10,
-        enrolledCount: Math.floor(Math.random() * 1000) + 10,
-        instructor: instructors[index % instructors.length]
-          ? {
-              id: instructors[index % instructors.length]._id || instructors[index % instructors.length].id,
-              firstName:
-                instructors[index % instructors.length].firstName ||
-                instructors[index % instructors.length].name?.split(' ')[0] ||
-                'John',
-              lastName:
-                instructors[index % instructors.length].lastName ||
-                instructors[index % instructors.length].name?.split(' ')[1] ||
-                'Doe',
-              email:
-                instructors[index % instructors.length].email ||
-                `user${index}@example.com`,
-              avatar: instructors[index % instructors.length].image,
-              university: 'University',
-            }
-          : {
-              id: `instructor-${index}`,
-              firstName: 'John',
-              lastName: 'Doe',
-              email: `instructor${index}@example.com`,
-              avatar: undefined,
-              university: 'University',
-            },
-        category: product.category || 'General',
-        level: (['beginner', 'intermediate', 'advanced'] as const)[
-          Math.floor(Math.random() * 3)
-        ],
-        createdAt: new Date().toISOString(),
-      }));
+      const courses: Course[] = products.map((product: any, index: number) => {
+        const instructor = instructors[index % instructors.length];
+        
+        // Safe instructor name parsing
+        let firstName = 'John';
+        let lastName = 'Doe';
+        
+        if (instructor) {
+          firstName = instructor.firstName || 'John';
+          lastName = instructor.lastName || 'Doe';
+          
+          // Only attempt name.split if name exists and is a string
+          if (!firstName && instructor.name && typeof instructor.name === 'string') {
+            const nameParts = instructor.name.split(' ');
+            firstName = nameParts[0] || 'John';
+            lastName = nameParts[1] || 'Doe';
+          }
+        }
+        
+        return {
+          id: product._id || product.id || `course-${index}`,
+          title: product.title || product.name || 'Untitled Course',
+          description: product.description || 'No description available',
+          thumbnail: product.image || product.thumbnail,
+          price: product.price || Math.random() * 100,
+          rating: product.rating || Math.random() * 5,
+          duration: Math.floor(Math.random() * 40) + 10,
+          enrolledCount: Math.floor(Math.random() * 1000) + 10,
+          instructor: instructor ? {
+            id: instructor._id || instructor.id || `instructor-${index}`,
+            firstName,
+            lastName,
+            email: instructor.email || `user${index}@example.com`,
+            avatar: instructor.image || instructor.avatar,
+            university: instructor.university || 'University',
+          } : {
+            id: `instructor-${index}`,
+            firstName: 'John',
+            lastName: 'Doe',
+            email: `instructor${index}@example.com`,
+            avatar: undefined,
+            university: 'University',
+          },
+          category: product.category || 'General',
+          level: (['beginner', 'intermediate', 'advanced'] as const)[
+            Math.floor(Math.random() * 3)
+          ],
+          createdAt: new Date().toISOString(),
+        };
+      });
 
       console.log('[getCourses] Mapped courses:', courses.length);
 
