@@ -42,7 +42,11 @@ export const usePreferencesStore = create<PreferencesStore>()(
     // Actions
     hydrate: async () => {
       try {
-        const cached = await storage.getObject<UserPreferences>(STORAGE_KEYS.USER_PREFS);
+        // CRITICAL: Short timeout for prefs loading
+        const cached = await Promise.race([
+          storage.getObject<UserPreferences>(STORAGE_KEYS.USER_PREFS),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
+        ]);
 
         if (cached) {
           set((state) => {

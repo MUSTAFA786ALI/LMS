@@ -61,25 +61,25 @@ export const useCourseStore = create<CourseStore>()(
       });
 
       try {
-        // Try to load from cache (non-blocking)
+        // CRITICAL: Use shorter timeouts for startup
         const cachedCourses = await Promise.race([
           storage.getObject<Course[]>(STORAGE_KEYS.COURSES_CACHE),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
         ]);
         
         const cachedBookmarks = await Promise.race([
           storage.getObject<string[]>(STORAGE_KEYS.BOOKMARKS),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
         ]);
         
         const cachedEnrollments = await Promise.race([
           storage.getObject<string[]>(STORAGE_KEYS.ENROLLMENTS),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
         ]);
         
         const cachedLastSync = await Promise.race([
           storage.getString(STORAGE_KEYS.LAST_SYNC),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
         ]);
 
         const lastSync = cachedLastSync ? parseInt(cachedLastSync, 10) : 0;
@@ -101,11 +101,14 @@ export const useCourseStore = create<CourseStore>()(
           state.isLoading = false; // Mark as loaded even if cache is empty
         });
 
-        // Refresh in background if cache is old (don't wait for this)
+        // Refresh in background if cache is old (fire and forget)
         if (Date.now() - lastSync > cacheExpiry) {
           console.log('[CourseStore] Cache expired, refreshing in background');
-          get().fetchCourses(true).catch((error) => {
-            console.warn('[CourseStore] Background refresh failed:', error.message);
+          // Non-blocking background refresh
+          setImmediate(() => {
+            get().fetchCourses(true).catch((error) => {
+              console.warn('[CourseStore] Background refresh failed:', error.message);
+            });
           });
         }
       } catch (error) {

@@ -42,7 +42,11 @@ export default function BookmarksScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>My Learning</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>My Learning</Text>
+          <Text style={styles.subtitle}>Manage your courses and bookmarks</Text>
+        </View>
 
         {isLoading ? (
           <View style={styles.centerContent}>
@@ -194,10 +198,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   title: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes['2xl'],
     fontWeight: '700',
     color: Colors.light.text,
-    marginVertical: Spacing.lg,
+    marginBottom: Spacing.xs,
+  },
+  subtitle: {
+    fontSize: FontSizes.sm,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.lg,
+  },
+  header: {
+    paddingVertical: Spacing.lg,
+    paddingBottom: Spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
   },
   sectionTitle: {
     fontSize: FontSizes.base,

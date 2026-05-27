@@ -22,9 +22,13 @@ export default function RootLayout() {
   // Use individual selector to avoid creating new objects on every render
   const preferredTheme = usePreferencesStore((state) => state.theme);
 
-  // Initialize notification hooks
-  useBookmarkNotifications();
-  useInactivityReminder();
+  // Initialize notification hooks - these should not block rendering
+  try {
+    useBookmarkNotifications();
+    useInactivityReminder();
+  } catch (error) {
+    console.warn('[RootLayout] Error initializing notification hooks:', error);
+  }
 
   // Determine active theme based on preference and system
   const activeTheme = useMemo(() => {

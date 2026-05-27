@@ -50,6 +50,13 @@ export const CourseCard = React.memo(
       return (
         <Pressable
           className={`flex flex-row items-center rounded-lg ${bgColor} border ${borderColor} p-3 mb-3 gap-3`}
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 3,
+            elevation: 2,
+          }}
           onPress={handlePress}
         >
           <View className={`w-12 h-12 rounded-lg ${isDark ? 'bg-blue-900' : 'bg-blue-100'} justify-center items-center`}>
@@ -64,9 +71,9 @@ export const CourseCard = React.memo(
               {course.instructor?.fullName || 'Unknown Instructor'}
             </Text>
             <View className="flex flex-row items-center gap-2 mt-2">
-              <View className={`flex flex-row items-center gap-1 px-2 py-1 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <View className={`flex flex-row items-center gap-1 px-2 py-1 rounded ${isDark ? 'bg-gray-700' : 'bg-blue-50'}`}>
                 <MaterialIcons name="star" size={12} color="#FBBF24" />
-                <Text className={`text-xs font-semibold ${textColor}`}>
+                <Text className={`text-xs font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
                   {(course.rating || 4.5).toFixed(1)}
                 </Text>
               </View>
@@ -90,14 +97,21 @@ export const CourseCard = React.memo(
     // Grid variant
     return (
       <Pressable
-        className={`rounded-lg overflow-hidden border ${borderColor} ${bgColor} mb-3`}
+        className={`rounded-lg overflow-hidden border ${borderColor} ${bgColor} mb-3 shadow-md`}
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+        }}
         onPress={handlePress}
       >
-        <View className={`w-full h-32 ${isDark ? 'bg-blue-900' : 'bg-blue-500'} justify-center items-center`}>
+        <View className={`w-full h-32 ${isDark ? 'bg-gradient-to-br from-blue-900 to-purple-900' : 'bg-gradient-to-br from-blue-500 to-cyan-500'} justify-center items-center`}>
           <MaterialIcons name="school" size={48} color="#fff" />
         </View>
 
-        <View className="p-2">
+        <View className="p-3">
           <Text className={`text-sm font-semibold ${textColor} mb-1`} numberOfLines={2}>
             {course.title}
           </Text>
@@ -105,18 +119,28 @@ export const CourseCard = React.memo(
             {course.instructor?.fullName || 'Unknown'}
           </Text>
 
-          <View className="flex flex-row items-center">
-            <View className={`flex flex-row items-center gap-1 px-2 py-1 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <View className="flex flex-row items-center justify-between">
+            <View className={`flex flex-row items-center gap-1 px-2 py-1 rounded ${isDark ? 'bg-gray-700' : 'bg-blue-50'}`}>
               <MaterialIcons name="star" size={12} color="#FBBF24" />
-              <Text className={`text-xs font-semibold ${textColor}`}>
+              <Text className={`text-xs font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
                 {(course.rating || 4.5).toFixed(1)}
               </Text>
             </View>
+            <Text className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {(course.enrolledCount || 0).toLocaleString()}
+            </Text>
           </View>
         </View>
 
         <Pressable
-          className={`absolute top-2 right-2 w-9 h-9 rounded-full ${isDark ? 'bg-gray-900' : 'bg-white'} justify-center items-center shadow`}
+          className={`absolute top-2 right-2 w-9 h-9 rounded-full ${isDark ? 'bg-gray-900' : 'bg-white'} justify-center items-center`}
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.2,
+            shadowRadius: 2,
+            elevation: 2,
+          }}
           onPress={handleBookmark}
           hitSlop={12}
         >

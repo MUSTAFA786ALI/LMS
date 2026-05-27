@@ -47,6 +47,8 @@ export default function HomeScreen() {
   }, []);
 
   const handleCoursePress = (courseId: string) => {
+    console.log('[HomeScreen] Navigating to course:', courseId);
+    console.log('[HomeScreen] Current courses in store:', courses.map(c => ({ id: c.id, title: c.title })).slice(0, 3));
     router.push(`/(tabs)/courses/${courseId}`);
   };
 
@@ -91,11 +93,12 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>Welcome back, {user?.fullName || 'Learner'}! 👋</Text>
+          <View>
+            <Text style={styles.greeting}>Welcome back! 👋</Text>
+            <Text style={styles.greetingSubtext}>{user?.fullName || 'Learner'}</Text>
           </View>
-          <Pressable onPress={handleLogout} hitSlop={12}>
-            <MaterialIcons name="logout" size={24} color={Colors.light.primary} />
+          <Pressable onPress={handleLogout} hitSlop={12} style={styles.logoutButton}>
+            <MaterialIcons name="logout" size={24} color={Colors.light.error} />
           </Pressable>
         </View>
 
@@ -251,14 +254,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: Spacing.lg,
-  },
-  headerLeft: {
-    flex: 1,
+    paddingBottom: Spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
   },
   greeting: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes['2xl'],
     fontWeight: '700',
     color: Colors.light.text,
+    marginBottom: Spacing.xs,
+  },
+  greetingSubtext: {
+    fontSize: FontSizes.sm,
+    color: Colors.light.textSecondary,
+    fontWeight: '400',
+  },
+  logoutButton: {
+    backgroundColor: '#FEE2E2',
+    padding: Spacing.md,
+    borderRadius: 8,
   },
   centerContent: {
     height: 300,
@@ -276,8 +290,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.light.text,
+    marginBottom: Spacing.md,
   },
   seeMore: {
     fontSize: FontSizes.sm,
@@ -290,6 +305,15 @@ const styles = StyleSheet.create({
   featuredCardWrapper: {
     width: 160,
     marginRight: Spacing.md,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...{
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 3,
+    },
   },
   allCoursesList: {
     paddingBottom: Spacing.xl,

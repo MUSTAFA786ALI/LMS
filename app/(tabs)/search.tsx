@@ -51,7 +51,7 @@ export default function SearchScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Explore Courses</Text>
-          <Text style={styles.subtitle}>Find your next learning path</Text>
+          <Text style={styles.subtitle}>Discover your next skill to learn</Text>
         </View>
 
         {/* Search Bar */}

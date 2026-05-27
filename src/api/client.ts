@@ -35,7 +35,7 @@ const processQueue = (error: any, token: string | null = null) => {
  */
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 5000, // Reduced from 10s to 5s for faster failure detection
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,6 +51,14 @@ api.interceptors.request.use(
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Log request details for debugging
+      console.log('[API Request]', {
+        url: config.url,
+        method: config.method,
+        hasToken: !!token,
+        data: config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : undefined,
+      });
     } catch (error) {
       console.warn('[API] Failed to retrieve token:', error);
     }

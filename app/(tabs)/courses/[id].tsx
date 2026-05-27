@@ -146,6 +146,7 @@ export default function CourseDetailScreen() {
   const {
     courses,
     isLoading,
+    fetchCourses,
     toggleBookmark,
     addEnrollment,
     isBookmarked,
@@ -155,16 +156,56 @@ export default function CourseDetailScreen() {
 
   const [showWebView, setShowWebView] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
+  const [coursesFetched, setCoursesFetched] = useState(false);
   const webViewRef = useRef<WebView>(null);
 
-  // Find the course
-  const course = courses.find((c) => c.id === id);
+  // Debug logging
+  useEffect(() => {
+    console.log('[CourseDetailScreen] Mounted');
+    console.log('[CourseDetailScreen] Course ID from route:', id);
+    console.log('[CourseDetailScreen] Available courses:', courses.length);
+    console.log('[CourseDetailScreen] Course IDs:', courses.map(c => c.id).slice(0, 5));
+  }, [id, courses]);
 
-  if (isLoading && !course) {
+  // Fetch courses if not already loaded
+  useEffect(() => {
+    console.log('[CourseDetailScreen] useEffect - courses.length:', courses.length, 'coursesFetched:', coursesFetched);
+    
+    if (!coursesFetched && courses.length === 0) {
+      console.log('[CourseDetailScreen] Fetching courses...');
+      fetchCourses().then(() => {
+        console.log('[CourseDetailScreen] Course fetch completed');
+        setCoursesFetched(true);
+      }).catch(err => {
+        console.error('[CourseDetailScreen] Course fetch failed:', err);
+        setCoursesFetched(true);
+      });
+    } else {
+      setCoursesFetched(true);
+    }
+  }, [coursesFetched]);
+
+  // Find the course
+  const course = courses.find((c) => {
+    const match = c.id === id;
+    if (match) {
+      console.log('[CourseDetailScreen] Course found:', c.title);
+    }
+    return match;
+  });
+
+  if (!course) {
+    console.log('[CourseDetailScreen] Course not found. ID:', id, 'Available IDs:', courses.map(c => c.id).join(', '));
+  }
+
+  if ((isLoading || !coursesFetched) && !course) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centerContent}>
           <LoadingSpinner size="large" color={Colors.light.primary} />
+          <Text style={{ marginTop: 16, fontSize: 14, color: Colors.light.textSecondary }}>
+            Loading course details...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -174,8 +215,15 @@ export default function CourseDetailScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
+          <View style={styles.headerBar}>
+            <Pressable onPress={() => router.back()} hitSlop={12}>
+              <MaterialIcons name="arrow-back" size={24} color={Colors.light.text} />
+            </Pressable>
+            <Text style={styles.headerTitle}>Course Details</Text>
+            <View style={styles.headerPlaceholder} />
+          </View>
           <ErrorMessage
-            message="Course not found"
+            message={`Course not found (ID: ${id}). Available: ${courses.length} courses. Please go back and try again.`}
             onDismiss={() => router.back()}
           />
         </View>
@@ -657,5 +705,17 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     width: '100%',
+  },
+  headerBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  headerPlaceholder: {
+    width: 24,
   },
 });

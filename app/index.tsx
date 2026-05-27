@@ -26,45 +26,47 @@ export default function SplashScreen() {
       try {
         console.log('[SplashScreen] Starting app initialization');
         
-        // Add timeout to prevent infinite loading (10 seconds)
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Hydration timeout - took too long')), 10000)
+        // CRITICAL: Absolute 5-second timeout to prevent any hang
+        const absoluteTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Initialization timeout')), 5000)
         );
 
         // Hydrate all stores in parallel with timeout protection
         try {
           await Promise.race([
-            Promise.all([hydrateAuth(), hydrateCourses(), hydratePrefs()]),
-            timeoutPromise
+            Promise.all([
+              hydrateAuth().catch(err => {
+                console.warn('[SplashScreen] Auth hydration failed:', err.message);
+              }),
+              hydrateCourses().catch(err => {
+                console.warn('[SplashScreen] Course hydration failed:', err.message);
+              }),
+              hydratePrefs().catch(err => {
+                console.warn('[SplashScreen] Prefs hydration failed:', err.message);
+              })
+            ]),
+            absoluteTimeoutPromise
           ]);
         } catch (hydrationError: any) {
-          console.warn('[SplashScreen] Hydration warning (continuing anyway):', hydrationError.message);
-          // Continue with partial hydration instead of blocking
+          console.warn('[SplashScreen] Hydration timeout/error:', hydrationError.message);
         }
 
-        // Small delay for better UX
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
         setIsInitialized(true);
 
-        // Get current auth state and navigate after layout is ready
+        // Get current auth state and navigate immediately
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
         
-        // Use a small timeout to ensure layout is mounted
-        setTimeout(() => {
-          if (isAuthenticated) {
-            router.replace('/(tabs)/home');
-          } else {
-            router.replace('/(auth)/login');
-          }
-        }, 100);
-      } catch (error) {
-        console.error('[SplashScreen] Initialization error:', error);
-        setIsInitialized(true);
-        // Default to login on error
-        setTimeout(() => {
+        // Navigate without delay - the router will handle async operations
+        if (isAuthenticated) {
+          router.replace('/(tabs)/home');
+        } else {
           router.replace('/(auth)/login');
-        }, 100);
+        }
+      } catch (error) {
+        console.error('[SplashScreen] Critical error:', error);
+        setIsInitialized(true);
+        // Default to login on critical error
+        router.replace('/(auth)/login');
       }
     };
 

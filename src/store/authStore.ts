@@ -43,52 +43,80 @@ export const useAuthStore = create<AuthStore>()(
       });
 
       try {
-        // Try to get token from secure storage
-        const token = await secureStorage.get(STORAGE_KEYS.AUTH_TOKEN);
+        // CRITICAL: Get token with timeout
+        const tokenPromise = secureStorage.get(STORAGE_KEYS.AUTH_TOKEN);
+        const timeoutPromise = new Promise<null>((resolve) => 
+          setTimeout(() => resolve(null), 2000)
+        );
+        const token = await Promise.race([tokenPromise, timeoutPromise]);
 
         if (!token) {
+          console.log('[AuthStore] No token found, skipping API call');
           set((state) => {
             state.isLoading = false;
           });
           return;
         }
 
-        // Fetch current user with the token
-        const response = await getCurrentUser();
-
-        if (response.success && response.data) {
-          set((state) => {
-            state.user = response.data;
-            state.isAuthenticated = true;
-            state.isLoading = false;
-            state.error = null;
-          });
-
-          // Cache user in AsyncStorage
-          await storage.setObject(STORAGE_KEYS.USER, response.data);
-        }
-      } catch (error) {
-        console.error('[AuthStore] Hydration error:', error);
-
-        // Try to restore from cache if API fails
+        // Try to fetch current user with short timeout
         try {
-          const cachedUser = await storage.getObject<User>(STORAGE_KEYS.USER);
-          if (cachedUser) {
+          const userPromise = getCurrentUser();
+          const userTimeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('User fetch timeout')), 3000)
+          );
+          const response = await Promise.race([userPromise, userTimeoutPromise]) as any;
+
+          if (response.success && response.data) {
             set((state) => {
-              state.user = cachedUser;
+              state.user = response.data;
               state.isAuthenticated = true;
               state.isLoading = false;
+              state.error = null;
+            });
+
+            // Cache user in AsyncStorage (don't wait for this)
+            storage.setObject(STORAGE_KEYS.USER, response.data).catch(err => {
+              console.warn('[AuthStore] Failed to cache user:', err);
             });
           } else {
             set((state) => {
               state.isLoading = false;
             });
           }
-        } catch {
-          set((state) => {
-            state.isLoading = false;
-          });
+        } catch (apiError) {
+          console.warn('[AuthStore] API call failed, trying cache:', apiError);
+          
+          // Try to restore from cache if API fails
+          try {
+            const cachedUserPromise = storage.getObject<User>(STORAGE_KEYS.USER);
+            const cacheTimeoutPromise = new Promise<null>((resolve) => 
+              setTimeout(() => resolve(null), 1000)
+            );
+            const cachedUser = await Promise.race([cachedUserPromise, cacheTimeoutPromise]);
+            
+            if (cachedUser) {
+              set((state) => {
+                state.user = cachedUser;
+                state.isAuthenticated = true;
+                state.isLoading = false;
+              });
+            } else {
+              set((state) => {
+                state.isLoading = false;
+              });
+            }
+          } catch (cacheError) {
+            console.warn('[AuthStore] Cache retrieval failed:', cacheError);
+            set((state) => {
+              state.isLoading = false;
+            });
+          }
         }
+      } catch (error) {
+        console.error('[AuthStore] Hydration critical error:', error);
+        set((state) => {
+          state.isLoading = false;
+        });
       }
     },
 
@@ -115,13 +143,16 @@ export const useAuthStore = create<AuthStore>()(
         const { user, accessToken, refreshToken } = response.data;
 
         // Store tokens in secure storage
-        await secureStorage.set(STORAGE_KEYS.AUTH_TOKEN, accessToken);
+        if (accessToken) {
+          await secureStorage.set(STORAGE_KEYS.AUTH_TOKEN, accessToken);
+        }
         if (refreshToken) {
           await secureStorage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
 
-        // Cache user in AsyncStorage
+        // Cache user in AsyncStorage and save user ID for session
         await storage.setObject(STORAGE_KEYS.USER, user);
+        await storage.setString('current_user_id', user.id);
 
         set((state) => {
           state.user = user;
@@ -144,6 +175,12 @@ export const useAuthStore = create<AuthStore>()(
     },
 
     register: async (email: string, password: string, username: string) => {
+      console.log('[AuthStore] Register starting:', {
+        email,
+        usernameLength: username?.length,
+        passwordLength: password?.length,
+      });
+
       set((state) => {
         state.isLoading = true;
         state.error = null;
