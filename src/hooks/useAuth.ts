@@ -38,9 +38,22 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     try {
-      await useAuthStore.getState().logout();
+      console.log('[useAuth] Logout hook called');
+      
+      // Wrap logout with a 5 second timeout to prevent hanging
+      const logoutPromise = useAuthStore.getState().logout();
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          console.warn('[useAuth] Logout timeout - forcing completion');
+          resolve();
+        }, 5000);
+      });
+      
+      await Promise.race([logoutPromise, timeoutPromise]);
+      console.log('[useAuth] Logout completed successfully');
       return { success: true };
     } catch (err: any) {
+      console.error('[useAuth] Logout error:', err);
       return { success: false, error: err.message };
     }
   }, []);

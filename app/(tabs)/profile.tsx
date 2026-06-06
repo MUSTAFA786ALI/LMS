@@ -51,10 +51,25 @@ export default function ProfileScreen() {
 
   const [testNotificationLoading, setTestNotificationLoading] = useState(false);
   const [imageActionModal, setImageActionModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/(auth)/login');
+    if (loggingOut) return; // Prevent multiple clicks
+    setLoggingOut(true);
+    try {
+      console.log('[ProfileScreen] Logout starting...');
+      const result = await logout();
+      console.log('[ProfileScreen] Logout completed:', result);
+      
+      // Add small delay to ensure state is cleared
+      setTimeout(() => {
+        console.log('[ProfileScreen] Navigating to login...');
+        router.replace('/(auth)/login');
+      }, 200);
+    } catch (error) {
+      console.error('[ProfileScreen] Logout failed:', error);
+      setLoggingOut(false);
+    }
   };
 
   const handleThemeToggle = () => {
@@ -278,8 +293,9 @@ export default function ProfileScreen() {
         {/* Logout Button */}
         <View style={styles.logoutSection}>
           <Button
-            label="Logout"
+            label={loggingOut ? "Logging out..." : "Logout"}
             onPress={handleLogout}
+            disabled={loggingOut}
             variant="danger"
             size="lg"
             isFullWidth

@@ -25,7 +25,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const {
     courses,
     enrolledCourseIds,
@@ -41,19 +41,41 @@ export default function HomeScreen() {
   const offlineFirst = useOfflineFirst();
   const [refreshing, setRefreshing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     fetchCourses();
   }, []);
 
   const handleCoursePress = (courseId: string) => {
-    console.log('[HomeScreen] Navigating to course:', courseId);
-    console.log('[HomeScreen] Current courses in store:', courses.map(c => ({ id: c.id, title: c.title })).slice(0, 3));
-    router.push(`/(tabs)/courses/${courseId}`);
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+      router.push({
+        pathname: '/courses/[id]',
+        params: { id: courseId, course: JSON.stringify(course) },
+      });
+    } else {
+      console.error('[HomeScreen] Course not found:', courseId);
+    }
   };
 
-  const handleLogout = () => {
-    router.replace('/(auth)/login');
+  const handleLogout = async () => {
+    if (loggingOut) return; // Prevent multiple clicks
+    setLoggingOut(true);
+    try {
+      console.log('[HomeScreen] Logout starting...');
+      const result = await logout();
+      console.log('[HomeScreen] Logout completed:', result);
+      
+      // Add small delay to ensure state is cleared
+      setTimeout(() => {
+        console.log('[HomeScreen] Navigating to login...');
+        router.replace('/(auth)/login');
+      }, 200);
+    } catch (error) {
+      console.error('[HomeScreen] Logout failed:', error);
+      setLoggingOut(false);
+    }
   };
 
   const handleRefresh = async () => {
@@ -97,8 +119,8 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Welcome back! 👋</Text>
             <Text style={styles.greetingSubtext}>{user?.fullName || 'Learner'}</Text>
           </View>
-          <Pressable onPress={handleLogout} hitSlop={12} style={styles.logoutButton}>
-            <MaterialIcons name="logout" size={24} color={Colors.light.error} />
+          <Pressable onPress={handleLogout} hitSlop={12} style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]} disabled={loggingOut}>
+            <MaterialIcons name="logout" size={24} color={loggingOut ? Colors.light.textTertiary : Colors.light.error} />
           </Pressable>
         </View>
 
@@ -273,6 +295,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     padding: Spacing.md,
     borderRadius: 8,
+  },
+  logoutButtonDisabled: {
+    backgroundColor: '#F5F5F5',
+    opacity: 0.6,
   },
   centerContent: {
     height: 300,

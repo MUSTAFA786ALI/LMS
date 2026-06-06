@@ -120,10 +120,32 @@ export async function getCurrentUser(): Promise<ApiResponse<User>> {
 }
 
 /**
- * Logout user
+ * Logout user - No retries to prevent hanging
  */
 export async function logoutUser(): Promise<ApiResponse<null>> {
-  return retry(() => api.post('/api/v1/users/logout').then((res) => res.data));
+  console.log('[API] Logout request starting...');
+  
+  // Logout should NOT retry - just try once with a 3 second timeout
+  try {
+    const logoutPromise = api.post('/api/v1/users/logout').then((res) => {
+      console.log('[API] Logout success:', res.data);
+      return res.data;
+    });
+    
+    const timeoutPromise = new Promise<ApiResponse<null>>((resolve) => {
+      setTimeout(() => {
+        console.warn('[API] Logout timeout - continuing logout anyway');
+        resolve({ success: true, data: null, message: 'Logout timeout' });
+      }, 2000);
+    });
+    
+    // Race between the actual request and timeout
+    return await Promise.race([logoutPromise, timeoutPromise]);
+  } catch (error) {
+    console.error('[API] Logout error:', error);
+    // Return success anyway so the user gets logged out
+    return { success: true, data: null, message: 'Logout completed' };
+  }
 }
 
 /**

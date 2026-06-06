@@ -142,7 +142,7 @@ function getCourseHTML(course: any) {
 
 export default function CourseDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, course: courseParam } = useLocalSearchParams<{ id: string; course?: string }>();
   const {
     courses,
     isLoading,
@@ -156,49 +156,46 @@ export default function CourseDetailScreen() {
 
   const [showWebView, setShowWebView] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
-  const [coursesFetched, setCoursesFetched] = useState(false);
+  const [passedCourse, setPassedCourse] = useState<any | null>(null);
+  const [localIsBookmarked, setLocalIsBookmarked] = useState(false);
+  const [localIsEnrolled, setLocalIsEnrolled] = useState(false);
   const webViewRef = useRef<WebView>(null);
 
-  // Debug logging
+  // Parse passed course data
   useEffect(() => {
-    console.log('[CourseDetailScreen] Mounted');
-    console.log('[CourseDetailScreen] Course ID from route:', id);
-    console.log('[CourseDetailScreen] Available courses:', courses.length);
-    console.log('[CourseDetailScreen] Course IDs:', courses.map(c => c.id).slice(0, 5));
-  }, [id, courses]);
+    if (courseParam) {
+      try {
+        const parsed = JSON.parse(courseParam);
+        setPassedCourse(parsed);
+        console.log('[CourseDetailScreen] Course data passed:', parsed.title);
+      } catch (e) {
+        console.error('[CourseDetailScreen] Failed to parse course param:', e);
+      }
+    }
+  }, [courseParam]);
 
-  // Fetch courses if not already loaded
+  // Fetch courses if not already loaded and we don't have the passed course
   useEffect(() => {
-    console.log('[CourseDetailScreen] useEffect - courses.length:', courses.length, 'coursesFetched:', coursesFetched);
-    
-    if (!coursesFetched && courses.length === 0) {
+    if (!passedCourse && courses.length === 0) {
       console.log('[CourseDetailScreen] Fetching courses...');
-      fetchCourses().then(() => {
-        console.log('[CourseDetailScreen] Course fetch completed');
-        setCoursesFetched(true);
-      }).catch(err => {
+      fetchCourses().catch(err => {
         console.error('[CourseDetailScreen] Course fetch failed:', err);
-        setCoursesFetched(true);
       });
-    } else {
-      setCoursesFetched(true);
     }
-  }, [coursesFetched]);
+  }, []);
 
-  // Find the course
-  const course = courses.find((c) => {
-    const match = c.id === id;
-    if (match) {
-      console.log('[CourseDetailScreen] Course found:', c.title);
+  // Find the course - use passed course first, then search store
+  const course = passedCourse || courses.find((c) => c.id === id);
+
+  // Update local state when course changes
+  useEffect(() => {
+    if (course && id) {
+      setLocalIsBookmarked(isBookmarked(course.id));
+      setLocalIsEnrolled(isEnrolled(course.id));
     }
-    return match;
-  });
+  }, [course?.id, id]);
 
-  if (!course) {
-    console.log('[CourseDetailScreen] Course not found. ID:', id, 'Available IDs:', courses.map(c => c.id).join(', '));
-  }
-
-  if ((isLoading || !coursesFetched) && !course) {
+  if ((isLoading && !course) || (!passedCourse && courses.length === 0 && !course)) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centerContent}>
@@ -223,7 +220,7 @@ export default function CourseDetailScreen() {
             <View style={styles.headerPlaceholder} />
           </View>
           <ErrorMessage
-            message={`Course not found (ID: ${id}). Available: ${courses.length} courses. Please go back and try again.`}
+            message="Unable to load course. Please go back and try again."
             onDismiss={() => router.back()}
           />
         </View>
@@ -233,10 +230,12 @@ export default function CourseDetailScreen() {
 
   const handleBookmark = () => {
     toggleBookmark(course.id);
+    setLocalIsBookmarked(!localIsBookmarked);
   };
 
   const handleEnroll = async () => {
-    addEnrollment(course.id);
+    await addEnrollment(course.id);
+    setLocalIsEnrolled(true);
     
     // Send enrollment notification if enabled
     const { notificationsEnabled } = usePreferencesStore.getState();
@@ -277,9 +276,9 @@ export default function CourseDetailScreen() {
         </Text>
         <Pressable onPress={handleBookmark} hitSlop={12}>
           <MaterialIcons
-            name={isBookmarked(course.id) ? 'bookmark' : 'bookmark-border'}
+            name={localIsBookmarked ? 'bookmark' : 'bookmark-border'}
             size={24}
-            color={isBookmarked(course.id) ? Colors.light.primary : Colors.light.text}
+            color={localIsBookmarked ? Colors.light.primary : Colors.light.text}
           />
         </Pressable>
       </View>
@@ -408,7 +407,7 @@ export default function CourseDetailScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          {!isEnrolled(course.id) ? (
+          {!localIsEnrolled ? (
             <Button
               label="Enroll Now"
               onPress={handleEnroll}
@@ -419,7 +418,7 @@ export default function CourseDetailScreen() {
           ) : (
             <View style={styles.enrolledBadge}>
               <MaterialIcons name="check-circle" size={20} color={Colors.light.success} />
-              <Text style={styles.enrolledText}>Already Enrolled</Text>
+              <Text style={styles.enrolledText}>Enrolled</Text>
             </View>
           )}
         </View>

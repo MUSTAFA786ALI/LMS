@@ -40,7 +40,15 @@ export default function SearchScreen() {
   }, []);
 
   const handleCoursePress = (courseId: string) => {
-    router.push(`/(tabs)/courses/${courseId}`);
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+      router.push({
+        pathname: '/courses/[id]',
+        params: { id: courseId, course: JSON.stringify(course) },
+      });
+    } else {
+      console.error('[SearchScreen] Course not found:', courseId);
+    }
   };
 
   const displayCourses = searchQuery.length > 0 ? filteredCourses : courses;

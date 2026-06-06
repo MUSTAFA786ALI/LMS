@@ -3,12 +3,12 @@
  * Saved courses and bookmarks
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,8 @@ export default function BookmarksScreen() {
   const {
     courses,
     isLoading,
+    bookmarkedCourseIds,
+    enrolledCourseIds,
     getBookmarkedCourses,
     getEnrolledCourses,
     toggleBookmark,
@@ -32,16 +34,36 @@ export default function BookmarksScreen() {
     // Hook will hydrate on mount
   }, []);
 
-  const bookmarkedCourses = getBookmarkedCourses();
-  const enrolledCourses = getEnrolledCourses();
+  // Memoize bookmarked and enrolled courses to update when IDs change
+  const bookmarkedCourses = useMemo(
+    () => getBookmarkedCourses(),
+    [bookmarkedCourseIds.join(','), courses.length]
+  );
+  
+  const enrolledCourses = useMemo(
+    () => getEnrolledCourses(),
+    [enrolledCourseIds.join(','), courses.length]
+  );
 
   const handleCoursePress = (courseId: string) => {
-    router.push(`/(tabs)/courses/${courseId}`);
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+      router.push({
+        pathname: '/courses/[id]',
+        params: { id: courseId, course: JSON.stringify(course) },
+      });
+    } else {
+      console.error('[BookmarksScreen] Course not found:', courseId);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>My Learning</Text>
@@ -58,56 +80,50 @@ export default function BookmarksScreen() {
             {enrolledCourses.length > 0 && (
               <>
                 <Text style={styles.sectionTitle}>Currently Learning</Text>
-                <FlatList
-                  data={enrolledCourses}
-                  contentContainerStyle={styles.listContent}
-                  scrollEnabled={false}
-                  renderItem={({ item }) => (
-                    <Pressable
-                      style={styles.courseItem}
-                      onPress={() => handleCoursePress(item.id)}
-                    >
-                      <View style={styles.courseImage}>
-                        <MaterialIcons
-                          name="school"
-                          size={32}
-                          color={Colors.light.primary}
-                        />
-                      </View>
-                      <View style={styles.courseInfo}>
-                        <Text style={styles.courseTitle} numberOfLines={1}>
-                          {item.title}
-                        </Text>
-                        <Text style={styles.instructorName} numberOfLines={1}>
-                          {item.instructor?.fullName || 'Unknown'}
-                        </Text>
-                        <View style={styles.courseFooter}>
-                          <View style={styles.rating}>
-                            <MaterialIcons name="star" size={12} color="#FBBF24" />
-                            <Text style={styles.ratingText}>
-                              {(item.rating || 4.5).toFixed(1)}
-                            </Text>
-                          </View>
-                          <View style={styles.badge}>
-                            <MaterialIcons
-                              name="check-circle"
-                              size={12}
-                              color={Colors.light.success}
-                            />
-                            <Text style={styles.badgeText}>Enrolled</Text>
-                          </View>
+                {enrolledCourses.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.courseItem}
+                    onPress={() => handleCoursePress(item.id)}
+                  >
+                    <View style={styles.courseImage}>
+                      <MaterialIcons
+                        name="school"
+                        size={32}
+                        color={Colors.light.primary}
+                      />
+                    </View>
+                    <View style={styles.courseInfo}>
+                      <Text style={styles.courseTitle} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.instructorName} numberOfLines={1}>
+                        {item.instructor?.fullName || 'Unknown'}
+                      </Text>
+                      <View style={styles.courseFooter}>
+                        <View style={styles.rating}>
+                          <MaterialIcons name="star" size={12} color="#FBBF24" />
+                          <Text style={styles.ratingText}>
+                            {(item.rating || 4.5).toFixed(1)}
+                          </Text>
+                        </View>
+                        <View style={styles.badge}>
+                          <MaterialIcons
+                            name="check-circle"
+                            size={12}
+                            color={Colors.light.success}
+                          />
+                          <Text style={styles.badgeText}>Enrolled</Text>
                         </View>
                       </View>
-                      <MaterialIcons
-                        name="chevron-right"
-                        size={24}
-                        color={Colors.light.textTertiary}
-                      />
-                    </Pressable>
-                  )}
-                  keyExtractor={(item) => item.id}
-                  showsVerticalScrollIndicator={false}
-                />
+                    </View>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={24}
+                      color={Colors.light.textTertiary}
+                    />
+                  </Pressable>
+                ))}
               </>
             )}
 
@@ -117,53 +133,47 @@ export default function BookmarksScreen() {
                 <Text style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>
                   Saved for Later
                 </Text>
-                <FlatList
-                  data={bookmarkedCourses}
-                  contentContainerStyle={styles.listContent}
-                  scrollEnabled={false}
-                  renderItem={({ item }) => (
-                    <Pressable
-                      style={styles.courseItem}
-                      onPress={() => handleCoursePress(item.id)}
-                    >
-                      <View style={styles.courseImage}>
-                        <MaterialIcons
-                          name="school"
-                          size={32}
-                          color={Colors.light.primary}
-                        />
-                      </View>
-                      <View style={styles.courseInfo}>
-                        <Text style={styles.courseTitle} numberOfLines={1}>
-                          {item.title}
-                        </Text>
-                        <Text style={styles.instructorName} numberOfLines={1}>
-                          {item.instructor?.fullName || 'Unknown'}
-                        </Text>
-                        <View style={styles.courseFooter}>
-                          <View style={styles.rating}>
-                            <MaterialIcons name="star" size={12} color="#FBBF24" />
-                            <Text style={styles.ratingText}>
-                              {(item.rating || 4.5).toFixed(1)}
-                            </Text>
-                          </View>
+                {bookmarkedCourses.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.courseItem}
+                    onPress={() => handleCoursePress(item.id)}
+                  >
+                    <View style={styles.courseImage}>
+                      <MaterialIcons
+                        name="school"
+                        size={32}
+                        color={Colors.light.primary}
+                      />
+                    </View>
+                    <View style={styles.courseInfo}>
+                      <Text style={styles.courseTitle} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.instructorName} numberOfLines={1}>
+                        {item.instructor?.fullName || 'Unknown'}
+                      </Text>
+                      <View style={styles.courseFooter}>
+                        <View style={styles.rating}>
+                          <MaterialIcons name="star" size={12} color="#FBBF24" />
+                          <Text style={styles.ratingText}>
+                            {(item.rating || 4.5).toFixed(1)}
+                          </Text>
                         </View>
                       </View>
-                      <Pressable
-                        onPress={() => toggleBookmark(item.id)}
-                        hitSlop={12}
-                      >
-                        <MaterialIcons
-                          name="bookmark"
-                          size={24}
-                          color={Colors.light.primary}
-                        />
-                      </Pressable>
+                    </View>
+                    <Pressable
+                      onPress={() => toggleBookmark(item.id)}
+                      hitSlop={12}
+                    >
+                      <MaterialIcons
+                        name="bookmark"
+                        size={24}
+                        color={Colors.light.primary}
+                      />
                     </Pressable>
-                  )}
-                  keyExtractor={(item) => item.id}
-                  showsVerticalScrollIndicator={false}
-                />
+                  </Pressable>
+                ))}
               </>
             )}
 
@@ -183,7 +193,7 @@ export default function BookmarksScreen() {
             )}
           </>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -195,7 +205,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xl,
   },
   title: {
     fontSize: FontSizes['2xl'],
@@ -219,14 +232,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.light.text,
     marginBottom: Spacing.md,
+    marginTop: Spacing.lg,
   },
   centerContent: {
-    flex: 1,
+    minHeight: 300,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  listContent: {
-    paddingBottom: Spacing.lg,
   },
   courseItem: {
     flexDirection: 'row',
@@ -292,7 +303,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   emptyState: {
-    flex: 1,
+    minHeight: 400,
     justifyContent: 'center',
     alignItems: 'center',
   },
