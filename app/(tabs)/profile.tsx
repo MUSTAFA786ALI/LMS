@@ -45,13 +45,15 @@ export default function ProfileScreen() {
   const { profileImage, pickImage, deleteImage, isLoading: imageLoading } = useProfileImage();
   
   // Notification hooks
-  const { sendNotification } = useNotifications();
+  const { sendNotification, snooze, SNOOZE_DURATIONS, SNOOZE_LABELS, activeNotificationId } = useNotifications();
   const { bookmarkCount } = useBookmarkNotifications();
   useInactivityReminder();
 
   const [testNotificationLoading, setTestNotificationLoading] = useState(false);
   const [imageActionModal, setImageActionModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [snoozeButtonsVisible, setSnoozeButtonsVisible] = useState(false);
+  const [snoozingDuration, setSnoozingDuration] = useState<number | null>(null);
 
   const handleLogout = async () => {
     if (loggingOut) return; // Prevent multiple clicks
@@ -99,13 +101,17 @@ export default function ProfileScreen() {
 
   const handleTestNotification = async () => {
     setTestNotificationLoading(true);
+    setSnoozeButtonsVisible(false);
+    setSnoozingDuration(null);
     try {
       const success = await sendNotification({
-        title: 'Course Reminder',
-        body: 'You have a course waiting! Check out your learning progress.',
-        delayMs: 2000,
+        title: '🧪 Test Notification',
+        body: 'Test snooze functionality - click snooze buttons below!',
+        delayMs: 500,
       });
-      if (!success) {
+      if (success) {
+        setSnoozeButtonsVisible(true);
+      } else {
         alert('Notifications disabled. Please enable notifications in settings.');
       }
     } catch (error) {
@@ -113,6 +119,18 @@ export default function ProfileScreen() {
     } finally {
       setTestNotificationLoading(false);
     }
+  };
+
+  const handleSnooze = async (duration: number) => {
+    setSnoozingDuration(duration);
+    const success = await snooze(duration);
+    if (success) {
+      console.log(`[ProfileScreen] Notification snoozed for ${SNOOZE_LABELS[duration as any]}`);
+      setSnoozeButtonsVisible(false);
+      // Show message to user
+      alert(`✅ Snoozed for ${SNOOZE_LABELS[duration as any]}. Notification will reappear soon!`);
+    }
+    setSnoozingDuration(null);
   };
 
   return (
@@ -205,6 +223,22 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
 
+          {/* App Icon Setting */}
+          <Pressable
+            style={styles.settingItem}
+            onPress={() => router.push('/icon-settings')}
+          >
+            <View style={styles.settingLeft}>
+              <MaterialIcons name="apps" size={24} color={Colors.light.primary} />
+              <Text style={styles.settingLabel}>App Icon</Text>
+            </View>
+            <MaterialIcons
+              name="chevron-right"
+              size={24}
+              color={Colors.light.textTertiary}
+            />
+          </Pressable>
+
           {/* Language Setting */}
           <Pressable style={styles.settingItem}>
             <View style={styles.settingLeft}>
@@ -258,20 +292,89 @@ export default function ProfileScreen() {
 
           {/* Test Notification Button */}
           {notificationsEnabled && (
-            <Pressable
-              style={styles.settingItem}
-              onPress={handleTestNotification}
-            >
-              <View style={styles.settingLeft}>
-                <MaterialIcons name="mail" size={24} color={Colors.light.primary} />
-                <Text style={styles.settingLabel}>Test Notification</Text>
-              </View>
-              {testNotificationLoading ? (
-                <LoadingSpinner size="small" color={Colors.light.primary} />
-              ) : (
-                <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
+            <>
+              <Pressable
+                style={styles.settingItem}
+                onPress={handleTestNotification}
+              >
+                <View style={styles.settingLeft}>
+                  <MaterialIcons name="mail" size={24} color={Colors.light.primary} />
+                  <Text style={styles.settingLabel}>Test Notification</Text>
+                </View>
+                {testNotificationLoading ? (
+                  <LoadingSpinner size="small" color={Colors.light.primary} />
+                ) : (
+                  <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
+                )}
+              </Pressable>
+
+              {/* Snooze Buttons - Shown after test notification is sent */}
+              {snoozeButtonsVisible && activeNotificationId && (
+                <View style={styles.snoozeContainer}>
+                  <Text style={styles.snoozeTitle}>Test Snooze Durations:</Text>
+                  
+                  <Pressable
+                    style={[
+                      styles.snoozeButton,
+                      snoozingDuration === SNOOZE_DURATIONS.SHORT && styles.snoozeButtonLoading,
+                    ]}
+                    onPress={() => handleSnooze(SNOOZE_DURATIONS.SHORT)}
+                    disabled={snoozingDuration !== null}
+                  >
+                    {snoozingDuration === SNOOZE_DURATIONS.SHORT ? (
+                      <LoadingSpinner size="small" color={Colors.light.primary} />
+                    ) : (
+                      <>
+                        <MaterialIcons name="schedule" size={18} color={Colors.light.primary} />
+                        <Text style={styles.snoozeButtonText}>
+                          Snooze {SNOOZE_LABELS[SNOOZE_DURATIONS.SHORT]}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.snoozeButton,
+                      snoozingDuration === SNOOZE_DURATIONS.MEDIUM && styles.snoozeButtonLoading,
+                    ]}
+                    onPress={() => handleSnooze(SNOOZE_DURATIONS.MEDIUM)}
+                    disabled={snoozingDuration !== null}
+                  >
+                    {snoozingDuration === SNOOZE_DURATIONS.MEDIUM ? (
+                      <LoadingSpinner size="small" color={Colors.light.primary} />
+                    ) : (
+                      <>
+                        <MaterialIcons name="schedule" size={18} color={Colors.light.primary} />
+                        <Text style={styles.snoozeButtonText}>
+                          Snooze {SNOOZE_LABELS[SNOOZE_DURATIONS.MEDIUM]}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.snoozeButton,
+                      snoozingDuration === SNOOZE_DURATIONS.LONG && styles.snoozeButtonLoading,
+                    ]}
+                    onPress={() => handleSnooze(SNOOZE_DURATIONS.LONG)}
+                    disabled={snoozingDuration !== null}
+                  >
+                    {snoozingDuration === SNOOZE_DURATIONS.LONG ? (
+                      <LoadingSpinner size="small" color={Colors.light.primary} />
+                    ) : (
+                      <>
+                        <MaterialIcons name="schedule" size={18} color={Colors.light.primary} />
+                        <Text style={styles.snoozeButtonText}>
+                          Snooze {SNOOZE_LABELS[SNOOZE_DURATIONS.LONG]}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
               )}
-            </Pressable>
+            </>
           )}
         </View>
 
@@ -286,6 +389,35 @@ export default function ProfileScreen() {
 
           <Pressable style={styles.settingItem}>
             <Text style={styles.settingLabel}>Help & Support</Text>
+            <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
+          </Pressable>
+        </View>
+
+        {/* Debug / Sentry Test Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Developer Testing</Text>
+
+          <Pressable
+            style={styles.settingItem}
+            onPress={() => {
+              throw new Error('Test Sentry JS Crash');
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <MaterialIcons name="bug-report" size={24} color={Colors.light.danger} />
+              <Text style={styles.settingLabel}>Trigger JS Crash</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
+          </Pressable>
+
+          <Pressable
+            style={styles.settingItem}
+            onPress={() => router.push('/crash-test')}
+          >
+            <View style={styles.settingLeft}>
+              <MaterialIcons name="warning" size={24} color={Colors.light.warning} />
+              <Text style={styles.settingLabel}>Trigger Infinite Loop</Text>
+            </View>
             <MaterialIcons name="chevron-right" size={24} color={Colors.light.textTertiary} />
           </Pressable>
         </View>
@@ -570,5 +702,43 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     marginBottom: Spacing.md,
+  },
+  // Snooze Styles
+  snoozeContainer: {
+    marginLeft: Spacing.lg,
+    marginRight: Spacing.lg,
+    marginBottom: Spacing.lg,
+    padding: Spacing.lg,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+  },
+  snoozeTitle: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+  },
+  snoozeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.light.background,
+    borderRadius: 8,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+    gap: Spacing.sm,
+  },
+  snoozeButtonLoading: {
+    backgroundColor: '#F0F0F0',
+  },
+  snoozeButtonText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.light.primary,
   },
 });

@@ -4,6 +4,22 @@
  * Gracefully handles Expo Go limitations where notifications may not be fully available
  */
 
+// Snooze duration constants (in seconds) - optimized for testing
+export const SNOOZE_DURATIONS = {
+  SHORT: 30,      // 30 seconds
+  MEDIUM: 60,     // 1 minute
+  LONG: 120,      // 2 minutes
+} as const;
+
+export type SnoozeDuration = typeof SNOOZE_DURATIONS[keyof typeof SNOOZE_DURATIONS];
+
+// Map for readable labels
+export const SNOOZE_LABELS: Record<SnoozeDuration, string> = {
+  [SNOOZE_DURATIONS.SHORT]: '30 seconds',
+  [SNOOZE_DURATIONS.MEDIUM]: '1 minute',
+  [SNOOZE_DURATIONS.LONG]: '2 minutes',
+};
+
 // Flag to track if notifications are available
 let notificationsAvailable = true;
 let Notifications: any = null;
@@ -247,6 +263,62 @@ export async function cancelAllNotifications(): Promise<void> {
     await Notif.cancelAllScheduledNotificationsAsync();
   } catch (error) {
     console.error('[Notifications] Error canceling all notifications:', error);
+  }
+}
+
+/**
+ * Snooze a notification by canceling it and rescheduling after specified duration
+ * @param notificationId - ID of notification to snooze
+ * @param originalNotification - Original notification data to reschedule
+ * @param duration - Snooze duration in seconds
+ * @returns New notification ID or null
+ */
+export async function snoozeNotification(
+  notificationId: string,
+  originalNotification: {
+    title: string;
+    body: string;
+    data?: Record<string, any>;
+  },
+  duration: SnoozeDuration = SNOOZE_DURATIONS.MEDIUM
+): Promise<string | null> {
+  try {
+    const Notif = getNotifications();
+    if (!Notif || !notificationsAvailable) {
+      console.warn('[Notifications] Notifications not available for snooze');
+      return null;
+    }
+
+    // Cancel the original notification
+    await cancelNotification(notificationId);
+
+    // Reschedule after snooze duration
+    const newNotificationId = await Notif.scheduleNotificationAsync({
+      content: {
+        title: originalNotification.title,
+        body: originalNotification.body,
+        data: {
+          ...originalNotification.data,
+          snoozed: true,
+          snoozeDuration: duration,
+        },
+        sound: 'default',
+      },
+      trigger: {
+        type: Notif.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: duration,
+      },
+    });
+
+    console.log(
+      `[Notifications] Notification snoozed for ${SNOOZE_LABELS[duration]} (new ID: ${newNotificationId})`
+    );
+
+    return newNotificationId;
+  } catch (error) {
+    notificationsAvailable = false;
+    console.error('[Notifications] Error snoozing notification:', error);
+    return null;
   }
 }
 

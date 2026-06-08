@@ -5,6 +5,7 @@
 
 import "../global.css";
 import React, { useMemo, useEffect } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { View, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
@@ -17,7 +18,13 @@ import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { OfflineBanner } from '@/src/components/OfflineBanner';
 import { Colors } from '@/src/constants/theme';
 
-export default function RootLayout() {
+Sentry.init({
+  dsn: 'https://d76f8348cb26bdd9536d2fee3693c06f@o4509598742413312.ingest.us.sentry.io/4511518739988480',
+  tracesSampleRate: 1.0,
+  enableNativeFramesTracking: true,
+});
+
+function RootLayout() {
   const systemColorScheme = useColorScheme();
   // Use individual selector to avoid creating new objects on every render
   const preferredTheme = usePreferencesStore((state) => state.theme);
@@ -88,3 +95,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);
